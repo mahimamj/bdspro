@@ -1,0 +1,37 @@
+{
+  "name": "bds-pro-website",
+  "version": "1.0.0",
+  "description": "Modern crypto trading and investment platform website",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "framer-motion": "^10.16.0",
+    "lucide-react": "^0.292.0",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "@next/font": "^14.0.0",
+    "firebase": "^10.7.0",
+    "react-hook-form": "^7.47.0",
+    "react-hot-toast": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "eslint": "^8.51.0",
+    "eslint-config-next": "^14.0.0",
+    "typescript": "^5.2.0"
+  },
+  "keywords": ["crypto", "trading", "investment", "platform"],
+  "author": "BDS PRO Team",
+  "license": "MIT"
+}
