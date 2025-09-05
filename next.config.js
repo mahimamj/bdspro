@@ -1,18 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable static export for Netlify
-  output: 'export',
+  // Vercel deployment configuration
   trailingSlash: true,
   
-  // Disable image optimization for static export
+  // Image optimization for Vercel
   images: {
-    unoptimized: true,
     domains: ['images.unsplash.com', 'via.placeholder.com'],
-  },
-  
-  // Disable server-side features for static export
-  experimental: {
-    esmExternals: false,
   },
   
   // Environment variables for build
