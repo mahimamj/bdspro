@@ -13,9 +13,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (!code) {
+    // Check if Google OAuth is configured
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return NextResponse.redirect(new URL('/login?error=google_oauth_not_configured', request.url));
+    }
+
     // Redirect to Google OAuth
     const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    googleAuthUrl.searchParams.set('client_id', process.env.GOOGLE_CLIENT_ID || '');
+    googleAuthUrl.searchParams.set('client_id', process.env.GOOGLE_CLIENT_ID);
     googleAuthUrl.searchParams.set('redirect_uri', `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google`);
     googleAuthUrl.searchParams.set('response_type', 'code');
     googleAuthUrl.searchParams.set('scope', 'openid email profile');
