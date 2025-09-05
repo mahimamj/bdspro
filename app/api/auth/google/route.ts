@@ -8,34 +8,38 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
+  console.log('Google OAuth callback:', { code: !!code, error });
+
   if (error) {
-    return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+    console.error('Google OAuth error:', error);
+    return NextResponse.redirect(new URL(/login?error=, request.url));
   }
 
   if (!code) {
     // Check if Google OAuth is configured
     if (!process.env.GOOGLE_CLIENT_ID) {
+      console.error('GOOGLE_CLIENT_ID is missing');
       return NextResponse.redirect(new URL('/login?error=google_oauth_not_configured', request.url));
+    }
+
+    if (!process.env.GOOGLE_CLIENT_SECRET) {
+      console.error('GOOGLE_CLIENT_SECRET is missing');
+      return NextResponse.redirect(new URL('/login?error=google_oauth_secret_missing', request.url));
     }
 
     // Redirect to Google OAuth
     const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     googleAuthUrl.searchParams.set('client_id', process.env.GOOGLE_CLIENT_ID);
-    googleAuthUrl.searchParams.set('redirect_uri', `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google`);
+    googleAuthUrl.searchParams.set('redirect_uri', ${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google);
     googleAuthUrl.searchParams.set('response_type', 'code');
     googleAuthUrl.searchParams.set('scope', 'openid email profile');
     googleAuthUrl.searchParams.set('access_type', 'offline');
 
+    console.log('Redirecting to Google OAuth:', googleAuthUrl.toString());
     return NextResponse.redirect(googleAuthUrl.toString());
   }
 
   try {
-    // Check if we have the required environment variables
-    if (!process.env.GOOGLE_CLIENT_SECRET) {
-      console.error('GOOGLE_CLIENT_SECRET is missing');
-      throw new Error('Google OAuth not properly configured');
-    }
-
     console.log('Exchanging code for token...');
     
     // Exchange code for token
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
         client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
         code,
         grant_type: 'authorization_code',
-        redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google`,
+        redirect_uri: ${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google,
       }),
     });
 
@@ -58,13 +62,13 @@ export async function GET(request: NextRequest) {
 
     if (!tokenData.access_token) {
       console.error('No access token received:', tokenData);
-      throw new Error(`Failed to get access token: ${tokenData.error || 'Unknown error'}`);
+      throw new Error(Failed to get access token: );
     }
 
     // Get user info from Google
     const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: {
-        Authorization: `Bearer ${tokenData.access_token}`,
+        Authorization: Bearer ,
       },
     });
 
@@ -72,7 +76,7 @@ export async function GET(request: NextRequest) {
     console.log('Google user data:', userData);
 
     // Check if user exists in database
-    const { db } = require('../database');
+    const { db } = require('../../database');
     let user = await db.findUserByEmail(userData.email);
     
     if (!user) {
@@ -85,7 +89,7 @@ export async function GET(request: NextRequest) {
       });
       
       if (!createResult.success) {
-        throw new Error(`Failed to create user: ${createResult.error}`);
+        throw new Error(Failed to create user: );
       }
       
       // Get the created user
@@ -117,11 +121,12 @@ export async function GET(request: NextRequest) {
     redirectUrl.searchParams.set('name', userData.name);
     redirectUrl.searchParams.set('email', userData.email);
 
+    console.log('Redirecting to dashboard:', redirectUrl.toString());
     return NextResponse.redirect(redirectUrl.toString());
 
   } catch (error) {
     console.error('Google OAuth error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.redirect(new URL(`/login?error=oauth_failed&details=${encodeURIComponent(errorMessage)}`, request.url));
+    return NextResponse.redirect(new URL(/login?error=oauth_failed&details=, request.url));
   }
 }
