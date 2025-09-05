@@ -17,7 +17,24 @@ exports.handler = async (event, context) => {
     return { statusCode: 200, headers, body: '' };
   }
 
+  console.log('Register function called with:', {
+    method: event.httpMethod,
+    body: event.body,
+    headers: event.headers
+  });
+
   try {
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Request body is required'
+        })
+      };
+    }
+
     const { name, email, password, confirmPassword } = JSON.parse(event.body);
 
     // Validate input
