@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY timestamp DESC LIMIT 100';
 
     // Execute query
-    const [rows] = await db.pool.execute(query, params);
+    const [rows] = await db.db.execute(query, params);
 
     // Format the data for the frontend
     const formattedData = rows.map((row: any) => ({

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's transaction summary
-    const [transactionSummary] = await db.pool.execute(`
+    const [transactionSummary] = await db.db.execute(`
       SELECT 
         COUNT(*) as total_transactions,
         SUM(CASE WHEN type = 'deposit' THEN amount ELSE 0 END) as total_deposits,
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     `, [userId]);
 
     // Get recent transactions
-    const [recentTransactions] = await db.pool.execute(`
+    const [recentTransactions] = await db.db.execute(`
       SELECT * FROM transactions 
       WHERE user_id = ? 
       ORDER BY timestamp DESC 
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     `, [userId]);
 
     // Get referral statistics
-    const [referralStats] = await db.pool.execute(`
+    const [referralStats] = await db.db.execute(`
       SELECT 
         COUNT(*) as total_referrals,
         SUM(CASE WHEN level = 1 THEN 1 ELSE 0 END) as level1_referrals,
