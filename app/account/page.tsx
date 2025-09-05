@@ -71,7 +71,7 @@ export default function AccountPage() {
         setLoading(true);
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         
-        const response = await fetch(`${baseUrl}/.netlify/functions/dashboard`, {
+        const response = await fetch(`${baseUrl}/api/dashboard`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

@@ -64,7 +64,7 @@ export default function DashboardPage() {
       }
 
       try {
-        const response = await fetch('http://localhost:5001/api/auth/profile', {
+        const response = await fetch('/api/dashboard', {
           headers: {
             'Authorization': `Bearer ${storedToken}`,
           },
