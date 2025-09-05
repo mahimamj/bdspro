@@ -60,10 +60,23 @@ export async function GET(request: NextRequest) {
 
     const userData = await userResponse.json();
 
-    // For now, redirect to dashboard with user data
-    // In a real app, you'd create/login the user and set a session
+    // Create a JWT token for the user
+    const jwt = require('jsonwebtoken');
+    const token = jwt.sign(
+      { 
+        user_id: userData.id, 
+        email: userData.email,
+        name: userData.name,
+        provider: 'google'
+      },
+      process.env.JWT_SECRET || 'demo_jwt_secret_key_for_development',
+      { expiresIn: '24h' }
+    );
+
+    // Redirect to dashboard with token in URL (will be stored in localStorage)
     const redirectUrl = new URL('/dashboard', request.url);
     redirectUrl.searchParams.set('google_auth', 'success');
+    redirectUrl.searchParams.set('token', token);
     redirectUrl.searchParams.set('name', userData.name);
     redirectUrl.searchParams.set('email', userData.email);
 

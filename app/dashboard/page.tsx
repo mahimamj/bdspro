@@ -34,16 +34,24 @@ export default function DashboardPage() {
     const checkAuth = async () => {
       // Check for Google OAuth callback parameters
       const urlParams = new URLSearchParams(window.location.search);
+      const googleAuth = urlParams.get('google_auth');
       const token = urlParams.get('token');
-      const userData = urlParams.get('user');
+      const name = urlParams.get('name');
+      const email = urlParams.get('email');
 
-      if (token && userData) {
+      if (googleAuth === 'success' && token && name && email) {
         // Handle Google OAuth callback
         try {
-          const user = JSON.parse(decodeURIComponent(userData));
+          const user = {
+            name,
+            email,
+            provider: 'google'
+          };
           localStorage.setItem('authToken', token);
           localStorage.setItem('userData', JSON.stringify(user));
           setIsAuthenticated(true);
+          
+          console.log('Google OAuth success, user authenticated:', user);
           
           // Clean up URL parameters
           window.history.replaceState({}, document.title, window.location.pathname);
