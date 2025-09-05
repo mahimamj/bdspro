@@ -69,21 +69,46 @@ export async function GET(request: NextRequest) {
     });
 
     const userData = await userResponse.json();
+    console.log('Google user data:', userData);
+
+    // Check if user exists in database
+    const { db } = require('../database');
+    let user = await db.findUserByEmail(userData.email);
+    
+    if (!user) {
+      // Create new Google OAuth user in database
+      console.log('Creating new Google OAuth user in database...');
+      const createResult = await db.createGoogleUser({
+        name: userData.name,
+        email: userData.email,
+        google_id: userData.id
+      });
+      
+      if (!createResult.success) {
+        throw new Error(`Failed to create user: ${createResult.error}`);
+      }
+      
+      // Get the created user
+      user = await db.findUserById(createResult.user_id);
+      console.log('Google user created successfully:', user);
+    } else {
+      console.log('Google user found in database:', user);
+    }
 
     // Create a JWT token for the user
     const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       { 
-        user_id: userData.id, 
-        email: userData.email,
-        name: userData.name,
+        user_id: user.user_id, 
+        email: user.email,
+        name: user.name,
         provider: 'google'
       },
       process.env.JWT_SECRET || 'demo_jwt_secret_key_for_development',
       { expiresIn: '24h' }
     );
 
-    console.log('JWT token created successfully');
+    console.log('JWT token created successfully for user:', user.user_id);
 
     // Redirect to dashboard with token in URL (will be stored in localStorage)
     const redirectUrl = new URL('/dashboard', request.url);

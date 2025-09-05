@@ -23,7 +23,8 @@
   "react-hot-toast": "^2.4.1",
   "bcryptjs": "^2.4.3",
   "jsonwebtoken": "^9.0.2",
-  "uuid": "^9.0.1"
+  "uuid": "^9.0.1",
+  "mysql2": "^3.6.0"
 },
   "devDependencies": {
     "@types/node": "^20.8.0",

@@ -110,7 +110,7 @@ export default function DashboardPage() {
         if (fromFilter) qs.set('withdrawal_from', fromFilter);
         if (startDate) qs.set('start', startDate);
         if (endDate) qs.set('end', endDate);
-        const res = await fetch(`${baseUrl}/api/transactions/by-category?${qs.toString()}`);
+        const res = await fetch(`/api/transactions/by-category?${qs.toString()}`);
         const text = await res.text();
         let json: any;
         try {
@@ -141,7 +141,7 @@ export default function DashboardPage() {
         
         console.log('Fetching user data with token:', token ? 'present' : 'missing');
         
-        const response = await fetch(`${baseUrl}/api/dashboard/user-data`, {
+        const response = await fetch(`/api/dashboard/user-data`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
