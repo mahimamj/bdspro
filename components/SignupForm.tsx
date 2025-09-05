@@ -61,18 +61,23 @@ const SignupFormContent = () => {
       });
 
       const result = await response.json();
+      console.log('Signup response:', { status: response.status, result });
 
       if (response.ok && result.success) {
         // Store token and user data
         if (result.data.token) {
           localStorage.setItem('authToken', result.data.token);
+          console.log('Token stored:', result.data.token);
         }
         if (result.data.user) {
           localStorage.setItem('userData', JSON.stringify(result.data.user));
+          console.log('User data stored:', result.data.user);
         }
         toast.success('Account created successfully!');
+        console.log('Redirecting to dashboard...');
         router.push('/dashboard');
       } else {
+        console.error('Signup failed:', result);
         throw new Error(result.message || 'Registration failed');
       }
     } catch (error: any) {
