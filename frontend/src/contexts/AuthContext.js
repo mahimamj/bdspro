@@ -67,47 +67,76 @@ const login = async (credentials) => {
     }
   };
 
-  const signup = async (userData) => {
-    try {
-      const response = await authAPI.signup(userData);
-      const { data } = response.data;
+const signup = async (userData) => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      }
+    );
 
-      // Store token and user data
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+    const result = await response.json();
 
-      setToken(data.token);
-      setUser(data.user);
+    if (result.success) {
+      localStorage.setItem('token', result.data.token);
+      localStorage.setItem('user', JSON.stringify(result.data.user));
+
+      setToken(result.data.token);
+      setUser(result.data.user);
 
       toast.success('Account created successfully!');
-      return { success: true, data };
-    } catch (error) {
-      const message = error.response?.data?.message || 'Signup failed';
-      toast.error(message);
-      return { success: false, error: message };
+      return { success: true, data: result.data };
+    } else {
+      toast.error(result.message || 'Signup failed');
+      return { success: false, error: result.message };
     }
-  };
+  } catch (error) {
+    console.error('Signup error:', error);
+    toast.error('An error occurred during signup');
+    return { success: false, error: 'An error occurred during signup' };
+  }
+};
 
-  const demoLogin = async (email) => {
-    try {
-      const response = await authAPI.demoLogin(email);
-      const { data } = response.data;
+const demoLogin = async (email) => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/demo-login`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      }
+    );
 
-      // Store token and user data
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+    const result = await response.json();
 
-      setToken(data.token);
-      setUser(data.user);
+    if (result.success) {
+      localStorage.setItem('token', result.data.token);
+      localStorage.setItem('user', JSON.stringify(result.data.user));
+
+      setToken(result.data.token);
+      setUser(result.data.user);
 
       toast.success('Demo login successful!');
-      return { success: true, data };
-    } catch (error) {
-      const message = error.response?.data?.message || 'Demo login failed';
-      toast.error(message);
-      return { success: false, error: message };
+      return { success: true, data: result.data };
+    } else {
+      toast.error(result.message || 'Demo login failed');
+      return { success: false, error: result.message };
     }
-  };
+  } catch (error) {
+    console.error('Demo login error:', error);
+    toast.error('An error occurred during demo login');
+    return { success: false, error: 'An error occurred during demo login' };
+  }
+};
+
 
   const logout = () => {
     // Clear local storage
