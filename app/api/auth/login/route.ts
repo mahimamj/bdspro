@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+// Disable static generation for this route
+export const dynamic = 'force-dynamic';
+
 // Simple in-memory database (replace with real database in production)
 let users: any[] = [];
 
