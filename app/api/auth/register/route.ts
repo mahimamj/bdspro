@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../database';
+import { db } from '../database';
 
 // Disable static generation for this route
 export const dynamic = 'force-dynamic';
