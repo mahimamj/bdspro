@@ -23,7 +23,7 @@ export const useAuth = () => {
       setLoading(true);
       
       // Redirect to backend Google OAuth
-      window.location.href = 'http://localhost:5001/api/auth/google';
+      window.location.href = '/api/auth/google';
       
     } catch (error: any) {
       console.error('Google sign-in error:', error);

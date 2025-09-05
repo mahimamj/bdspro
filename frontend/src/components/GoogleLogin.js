@@ -5,8 +5,8 @@ const GoogleLogin = ({ onSuccess, onError }) => {
   const { setUser, setToken } = useAuth();
 
   const handleGoogleLogin = () => {
-    // Redirect to backend Google OAuth endpoint
-    window.location.href = 'http://localhost:5001/api/auth/google';
+    // Redirect to Vercel API Google OAuth endpoint
+    window.location.href = '/api/auth/google';
   };
 
   return (
