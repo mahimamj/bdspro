@@ -1,3 +1,5 @@
+'use client';
+
 import SignupForm from '@/components/SignupForm';
 import { motion } from 'framer-motion';
 
