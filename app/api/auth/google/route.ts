@@ -30,6 +30,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Check if we have the required environment variables
+    if (!process.env.GOOGLE_CLIENT_SECRET) {
+      console.error('GOOGLE_CLIENT_SECRET is missing');
+      throw new Error('Google OAuth not properly configured');
+    }
+
+    console.log('Exchanging code for token...');
+    
     // Exchange code for token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -46,9 +54,11 @@ export async function GET(request: NextRequest) {
     });
 
     const tokenData = await tokenResponse.json();
+    console.log('Token response:', tokenData);
 
     if (!tokenData.access_token) {
-      throw new Error('Failed to get access token');
+      console.error('No access token received:', tokenData);
+      throw new Error(`Failed to get access token: ${tokenData.error || 'Unknown error'}`);
     }
 
     // Get user info from Google
@@ -73,6 +83,8 @@ export async function GET(request: NextRequest) {
       { expiresIn: '24h' }
     );
 
+    console.log('JWT token created successfully');
+
     // Redirect to dashboard with token in URL (will be stored in localStorage)
     const redirectUrl = new URL('/dashboard', request.url);
     redirectUrl.searchParams.set('google_auth', 'success');
@@ -84,6 +96,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Google OAuth error:', error);
-    return NextResponse.redirect(new URL('/login?error=oauth_failed', request.url));
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.redirect(new URL(`/login?error=oauth_failed&details=${encodeURIComponent(errorMessage)}`, request.url));
   }
 }
