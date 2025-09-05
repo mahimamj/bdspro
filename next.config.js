@@ -17,7 +17,7 @@ const nextConfig = {
   
   // Environment variables for build
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://your-backend-url.herokuapp.com'
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || ''
   }
 }
 

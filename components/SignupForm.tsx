@@ -46,7 +46,7 @@ const SignupForm = () => {
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5001/api/auth/register', {
+      const response = await fetch('/.netlify/functions/auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

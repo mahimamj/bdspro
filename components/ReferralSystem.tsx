@@ -52,7 +52,7 @@ export default function ReferralSystem() {
         return;
       }
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
       // Try to fetch referral link
       try {

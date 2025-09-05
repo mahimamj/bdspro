@@ -98,7 +98,7 @@ export default function DashboardPage() {
       try {
         setDataLoading(true);
         setError(null);
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const qs = new URLSearchParams({ category: selectedCategory });
         if (fromFilter) qs.set('withdrawal_from', fromFilter);
         if (startDate) qs.set('start', startDate);
@@ -130,7 +130,7 @@ export default function DashboardPage() {
       try {
         setUserLoading(true);
         const token = localStorage.getItem('authToken');
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         
         console.log('Fetching user data with token:', token ? 'present' : 'missing');
         

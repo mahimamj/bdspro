@@ -21,9 +21,11 @@
   "postcss": "^8.4.31",
   "firebase": "^10.7.0",
   "react-hook-form": "^7.47.0",
-  "react-hot-toast": "^2.4.1"
-}
-,
+  "react-hot-toast": "^2.4.1",
+  "bcryptjs": "^2.4.3",
+  "jsonwebtoken": "^9.0.2",
+  "uuid": "^9.0.1"
+},
   "devDependencies": {
     "@types/node": "^20.8.0",
     "@types/react": "^18.2.0",
