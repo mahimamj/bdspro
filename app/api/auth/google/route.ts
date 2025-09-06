@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-const db = require('../../db');
+const getDbConnection = require('../db-connection');\nconst db = getDbConnection();
 
 export const dynamic = 'force-dynamic';
 
