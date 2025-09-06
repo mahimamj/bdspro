@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '../../db';
+const db = require('../../db');
 import jwt from 'jsonwebtoken';
 
 // Disable static generation for this route
