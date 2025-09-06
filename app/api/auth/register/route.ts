@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../database';
+import db from '../../database';
 
 // Disable static generation for this route
 export const dynamic = 'force-dynamic';
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists in database
-    const existingUser = await db.findUserByEmail(email);
+    const existingUser = await db.execute('SELECT * FROM users WHERE email = ?', [email])(email);
     if (existingUser) {
       return NextResponse.json(
         { success: false, message: 'User with this email already exists' },

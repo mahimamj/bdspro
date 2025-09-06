@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { db } from '../../database';
+import db from '../../database';
 
 // Disable static generation for this route
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by email in database
-    const user = await db.findUserByEmail(email);
+    const user = await db.execute('SELECT * FROM users WHERE email = ?', [email])(email);
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'Invalid email or password' },

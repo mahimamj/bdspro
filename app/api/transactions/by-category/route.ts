@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '../../database';
+import db from '../../database';
 
 // Disable static generation for this route
 export const dynamic = 'force-dynamic';
