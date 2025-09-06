@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     key.includes('SESSION') || 
     key.includes('GOOGLE') || 
     key.includes('DATABASE') ||
+    key.includes('MYSQL') ||
     key.includes('NEXT_PUBLIC')
   );
 
@@ -26,6 +27,12 @@ export async function GET(request: NextRequest) {
     environment,
     allEnvVars,
     timestamp: new Date().toISOString(),
-    version: '1.0.3'
+    version: '1.0.6',
+    debug: {
+      googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET',
+      googleClientId: process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET',
+      databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
+      mysqlHost: process.env.MYSQL_HOST ? 'SET' : 'NOT SET'
+    }
   });
 }
