@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../../database';
 
-// Disable static generation for this route
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
@@ -11,7 +10,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
-    // Validate input
     if (!email || !password) {
       return NextResponse.json(
         { success: false, message: 'Email and password are required' },
@@ -20,7 +18,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by email in database
-    const user = await db.execute('SELECT * FROM users WHERE email = ?', [email])(email);
+    const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const user = users[0];
+    
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'Invalid email or password' },
@@ -50,8 +50,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       account_balance: user.account_balance,
       total_earning: user.total_earning,
-      rewards: user.rewards,
-      is_verified: user.is_verified
+      rewards: user.rewards
     };
 
     return NextResponse.json({
