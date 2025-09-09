@@ -157,7 +157,7 @@ export default function MyAccountPage() {
       formData.append('amount', '50'); // Default amount for now
       formData.append('referrerId', ''); // Will be fetched from user data
 
-      const response = await fetch('/api/transactions/upload-proof', {
+      const response = await fetch('/api/upload-simple', {
         method: 'POST',
         body: formData,
       });
