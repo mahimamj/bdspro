@@ -119,13 +119,13 @@ export async function POST(request: NextRequest) {
       const [insertResult] = await db.execute(
         'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status) VALUES (?, ?, ?, ?, ?, ?)',
         [userId, referrerId, imageUrl, transactionHash || `tx_${timestamp}`, amount || '50.00', 'pending']
-      );
+      ) as any;
       
       console.log('Database insert result:', insertResult);
       console.log('Database record inserted successfully with ID:', (insertResult as any).insertId);
       
       // Verify the insert by counting records
-      const [count] = await db.execute('SELECT COUNT(*) as count FROM images');
+      const [count] = await db.execute('SELECT COUNT(*) as count FROM images') as any;
       console.log('Total images in database after insert:', count[0].count);
       
     } catch (insertError) {
