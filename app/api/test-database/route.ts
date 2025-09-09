@@ -11,9 +11,8 @@ const db = mysql.createPool({
     rejectUnauthorized: false
   },
   connectionLimit: 10,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  waitForConnections: true,
+  queueLimit: 0
 });
 
 export const dynamic = 'force-dynamic';
