@@ -1,223 +1,156 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-const jwt = require('jsonwebtoken');
-import { db } from '@/lib/db';
-import { RowDataPacket } from 'mysql2';
-
-export const dynamic = 'force-dynamic';
+import mysql from 'mysql2/promise';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== REGISTRATION START ===');
-    console.log('Environment variables check:');
-    console.log('MYSQL_HOST:', process.env.MYSQL_HOST);
-    console.log('MYSQL_PORT:', process.env.MYSQL_PORT);
-    console.log('MYSQL_USER:', process.env.MYSQL_USER);
-    console.log('MYSQL_PASSWORD:', process.env.MYSQL_PASSWORD ? 'SET' : 'NOT SET');
-    console.log('MYSQL_DATABASE:', process.env.MYSQL_DATABASE);
-    console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
+    console.log('=== REGISTRATION API START ===');
     
-    const body = await request.json();
-    console.log('Request body received:', { name: body.name, email: body.email, referralCode: body.referralCode });
+    const { name, email, phone, password, referralCode } = await request.json();
     
-    const { name, email, password, confirmPassword, referralCode } = body;
+    console.log('Registration data received:', {
+      name,
+      email,
+      phone,
+      hasPassword: !!password,
+      referralCode
+    });
 
-    if (!name || !email || !password || !confirmPassword) {
-      console.log('Validation failed: Missing required fields');
+    // Validate required fields
+    if (!name || !email || !phone || !password) {
       return NextResponse.json(
-        { success: false, message: 'All fields are required' },
+        { error: 'Name, email, phone, and password are required' },
         { status: 400 }
       );
     }
 
-    if (password !== confirmPassword) {
-      console.log('Validation failed: Passwords do not match');
-      return NextResponse.json(
-        { success: false, message: 'Passwords do not match' },
-        { status: 400 }
-      );
-    }
+    // Get database connection
+    const db = mysql.createPool({
+      host: process.env.MYSQL_HOST || "hopper.proxy.rlwy.net",
+      port: Number(process.env.MYSQL_PORT) || 50359,
+      user: process.env.MYSQL_USER || "root",
+      password: process.env.MYSQL_PASSWORD || "QxNkIyShqDFSigZzxHaxiyZmqtzekoXL",
+      database: process.env.MYSQL_DATABASE || "railway",
+      ssl: {
+        rejectUnauthorized: false
+      },
+      connectionLimit: 10,
+      waitForConnections: true,
+      queueLimit: 0
+    });
 
-    if (password.length < 6) {
-      console.log('Validation failed: Password too short');
-      return NextResponse.json(
-        { success: false, message: 'Password must be at least 6 characters long' },
-        { status: 400 }
-      );
-    }
-
-    // Test database connection first
-    console.log('Testing database connection...');
-    try {
-      const [testResult] = await db.execute('SELECT 1 as test');
-      console.log('Database connection successful:', testResult);
-    } catch (dbError) {
-      console.error('Database connection failed:', dbError);
-      if (dbError instanceof Error) {
-        console.error('Database error details:', {
-          message: dbError.message,
-          code: (dbError as any).code,
-          errno: (dbError as any).errno,
-          sqlState: (dbError as any).sqlState
-        });
-        return NextResponse.json(
-          { success: false, message: 'Database connection failed', error: dbError.message },
-          { status: 500 }
-        );
-      } else {
-        console.error('Unknown database error:', dbError);
-        return NextResponse.json(
-          { success: false, message: 'Database connection failed', error: 'Unknown database error' },
-          { status: 500 }
-        );
-      }
-    }
+    console.log('Database connection created');
 
     // Check if user already exists
-    console.log('Checking if user already exists for email:', email);
-    try {
-      const [existingUsers] = await db.execute<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [email]);
-      console.log('Existing users found:', existingUsers.length);
-      
-      if (existingUsers.length > 0) {
-        console.log('User already exists');
-        return NextResponse.json(
-          { success: false, message: 'User with this email already exists' },
-          { status: 400 }
-        );
-      }
-    } catch (dbError) {
-      console.error('Error checking existing users:', dbError);
+    const [existingUsers] = await db.execute(
+      'SELECT user_id FROM users WHERE email = ?',
+      [email]
+    ) as any;
+
+    if (existingUsers.length > 0) {
+      console.log('User already exists with email:', email);
       return NextResponse.json(
-        { success: false, message: 'Database error checking existing users', error: dbError instanceof Error ? dbError.message : 'Unknown error' },
-        { status: 500 }
+        { error: 'User with this email already exists' },
+        { status: 400 }
       );
     }
 
     // Hash password
-    console.log('Hashing password...');
-    try {
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-      console.log('Password hashed successfully');
-      
-      // Generate referral code
-      const referral_code = 'BDS_' + Math.random().toString(36).substr(2, 8).toUpperCase();
-      console.log('Generated referral code:', referral_code);
-      
-      // Find referrer if referral code provided
-      let referrer_id = null;
-      if (referralCode) {
-        console.log('Looking for referrer with code:', referralCode);
-        try {
-          const [referrer] = await db.execute(
-            'SELECT user_id FROM users WHERE referral_code = ?',
-            [referralCode]
-          ) as any;
-          
-          if (referrer.length > 0) {
-            referrer_id = referrer[0].user_id;
-            console.log('Found referrer with ID:', referrer_id);
-          } else {
-            console.log('No referrer found with code:', referralCode);
-          }
-        } catch (error) {
-          console.error('Error finding referrer:', error);
-        }
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+    console.log('Password hashed successfully');
+
+    // Generate unique referral code
+    const generateReferralCode = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = 'BDS';
+      for (let i = 0; i < 7; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      
-      // Check table structure first
-      console.log('Checking users table structure...');
-      const [columns] = await db.execute('DESCRIBE users');
-      console.log('Users table columns:', columns);
-      
-      // Create user in database with all required fields
-      console.log('Inserting user into database...');
-      console.log('Insert data:', {
-        name: name,
-        email: email,
-        password_hash: hashedPassword.substring(0, 20) + '...',
-        referral_code: referral_code,
-        referrer_id: referrer_id
-      });
-      
-      const [result] = await db.execute(
-        'INSERT INTO users (name, email, password_hash, referral_code, referrer_id, account_balance, total_earning, rewards, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [name, email, hashedPassword, referral_code, referrer_id, 0.00, 0.00, 0.00, '']
-      );
+      return result;
+    };
 
-      const userId = (result as any).insertId;
-      console.log('User created successfully with ID:', userId);
+    const newReferralCode = generateReferralCode();
+    console.log('Generated referral code:', newReferralCode);
 
-      // Create referral record if referrer exists
-      if (referrer_id) {
-        try {
-          console.log('Creating referral record...');
-          await db.execute(
-            'INSERT INTO referrals (referrer_id, referred_id, level, created_at) VALUES (?, ?, 1, NOW())',
-            [referrer_id, userId]
-          );
-          console.log('Referral record created successfully');
-        } catch (error) {
-          console.error('Error creating referral record:', error);
-        }
+    // Handle referral code if provided
+    let referrerId = null;
+    let referrerName = null;
+
+    if (referralCode && referralCode.trim() !== '') {
+      console.log('Processing referral code:', referralCode);
+      
+      // Find the referrer by their referral code
+      const [referrerResult] = await db.execute(
+        'SELECT user_id, name FROM users WHERE referral_code = ?',
+        [referralCode.trim()]
+      ) as any;
+
+      if (referrerResult.length > 0) {
+        referrerId = referrerResult[0].user_id;
+        referrerName = referrerResult[0].name;
+        console.log('Found referrer:', { referrerId, referrerName, referralCode });
+      } else {
+        console.log('Invalid referral code:', referralCode);
+        return NextResponse.json(
+          { error: 'Invalid referral code' },
+          { status: 400 }
+        );
       }
-
-      // Generate JWT token
-      console.log('Generating JWT token...');
-      const token = jwt.sign(
-        { user_id: userId, email: email },
-        process.env.JWT_SECRET || 'demo_jwt_secret_key_for_development',
-        { expiresIn: '24h' }
-      );
-      console.log('JWT token generated successfully');
-
-      const userData = {
-        user_id: userId,
-        name: name,
-        email: email,
-        account_balance: 0.00,
-        total_earning: 0.00,
-        rewards: 0.00
-      };
-
-      console.log('Registration successful, returning user data:', userData);
-
-      return NextResponse.json({
-        success: true,
-        message: 'User registered successfully',
-        data: {
-          user: userData,
-          token: token
-        }
-      }, { status: 201 });
-      
-    } catch (dbError) {
-      console.error('Error during user creation:', dbError);
-      console.error('Error details:', {
-        message: dbError instanceof Error ? dbError.message : 'Unknown error',
-        code: (dbError as any)?.code,
-        errno: (dbError as any)?.errno,
-        sqlState: (dbError as any)?.sqlState
-      });
-      return NextResponse.json(
-        { success: false, message: 'Database error during user creation', error: dbError instanceof Error ? dbError.message : 'Unknown error' },
-        { status: 500 }
-      );
+    } else {
+      console.log('No referral code provided');
     }
 
+    // Insert new user
+    const [insertResult] = await db.execute(
+      'INSERT INTO users (name, email, phone, password_hash, account_balance, total_earning, rewards, referral_code, referrer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, email, phone, passwordHash, 0, 0, 0, newReferralCode, referrerId]
+    ) as any;
+
+    const newUserId = insertResult.insertId;
+    console.log('User created successfully with ID:', newUserId);
+
+    // If there's a referrer, create referral record
+    if (referrerId) {
+      try {
+        await db.execute(
+          'INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)',
+          [referrerId, newUserId]
+        );
+        console.log('Referral record created:', { referrerId, referredId: newUserId });
+      } catch (referralError) {
+        console.error('Error creating referral record:', referralError);
+        // Don't fail the registration if referral record creation fails
+      }
+    }
+
+    // Verify the user was created correctly
+    const [verifyUser] = await db.execute(
+      'SELECT user_id, name, email, referral_code, referrer_id FROM users WHERE user_id = ?',
+      [newUserId]
+    ) as any;
+
+    console.log('User verification:', verifyUser[0]);
+
+    return NextResponse.json({
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        id: newUserId,
+        name,
+        email,
+        referralCode: newReferralCode,
+        referrerId,
+        referrerName
+      }
+    });
+
   } catch (error) {
-    console.error('=== REGISTRATION ERROR ===');
-    console.error('Error type:', typeof error);
-    console.error('Error constructor:', error?.constructor?.name);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
+    console.error('Error during registration:', error);
     return NextResponse.json(
       { 
-        success: false, 
-        message: 'Internal server error',
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: 'Registration failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
