@@ -73,21 +73,21 @@ export default function MyAccountPage() {
           id: 'usdt-trc20',
           name: 'USDT (TRC20)',
           description: 'Tether USD on TRON network',
-          minAmount: 10,
+          minAmount: 50,
           estimatedTime: '5-10 minutes'
         },
         {
           id: 'usdt-erc20',
           name: 'USDT (ERC20)',
           description: 'Tether USD on Ethereum network',
-          minAmount: 20,
+          minAmount: 50,
           estimatedTime: '10-30 minutes'
         },
         {
           id: 'btc',
           name: 'Bitcoin',
           description: 'Bitcoin network',
-          minAmount: 0.001,
+          minAmount: 50,
           estimatedTime: '30-60 minutes'
         }
       ]);
@@ -101,6 +101,12 @@ export default function MyAccountPage() {
     
     if (!depositForm.amount || !depositForm.method) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const amount = parseFloat(depositForm.amount);
+    if (amount < 50) {
+      toast.error('Minimum investment is 50 USDT. Please enter a valid amount.');
       return;
     }
 
@@ -225,13 +231,16 @@ export default function MyAccountPage() {
                     <input
                       type="number"
                       step="0.01"
-                      min="0"
+                      min="50"
                       value={depositForm.amount}
                       onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="Enter amount"
+                      placeholder="Enter amount (minimum 50 USDT)"
                       required
                     />
+                    <p className="mt-1 text-sm text-amber-600 flex items-center gap-1">
+                      <span className="font-medium">Starter:</span> 50 USDT minimum investment required. Amounts below 50 USDT cannot be processed for payment.
+                    </p>
                   </div>
 
                   <div>
