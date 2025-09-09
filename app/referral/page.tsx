@@ -36,11 +36,11 @@ export default function ReferralPage() {
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      router.push('/login');
         return;
-      }
+    }
       setIsAuthenticated(true);
       loadReferralData();
     };
