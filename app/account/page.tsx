@@ -42,6 +42,8 @@ export default function MyAccountPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [transactionHash, setTransactionHash] = useState('');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   useEffect(() => {
@@ -139,6 +141,53 @@ export default function MyAccountPage() {
   const closeVerifyModal = () => {
     setShowVerifyModal(false);
     setTransactionHash('');
+  };
+
+  const handleSaveAsImage = async () => {
+    if (!uploadedFile) {
+      toast.error('Please upload a payment proof image first');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', uploadedFile);
+      formData.append('transactionHash', transactionHash || '');
+      formData.append('amount', '50'); // Default amount for now
+      formData.append('referrerId', ''); // Will be fetched from user data
+
+      const response = await fetch('/api/transactions/upload-proof', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShowSaveModal(true);
+        toast.success('Transaction proof saved successfully!');
+        
+        // Reset form
+        setUploadedFile(null);
+        setUploadedFileName('');
+        setTransactionHash('');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } else {
+        toast.error(data.error || 'Failed to save transaction proof');
+      }
+    } catch (error) {
+      console.error('Error saving transaction proof:', error);
+      toast.error('Failed to save transaction proof');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const closeSaveModal = () => {
+    setShowSaveModal(false);
   };
 
   return (
@@ -332,9 +381,13 @@ export default function MyAccountPage() {
 
           {/* Action Buttons */}
           <div className="flex gap-3">
-            <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={handleSaveAsImage}
+              disabled={!uploadedFile || isUploading}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Save className="h-4 w-4" />
-              Save as Image
+              {isUploading ? 'Saving...' : 'Save as Image'}
             </button>
             <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               <Share2 className="h-4 w-4" />
@@ -430,6 +483,27 @@ export default function MyAccountPage() {
                 Verify Deposit
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Confirmation Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+            <div className="mb-4">
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Saved</h3>
+            <p className="text-gray-600 mb-6">
+              Your transaction proof has been saved successfully! Admin will review your payment.
+            </p>
+            <button
+              onClick={closeSaveModal}
+              className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
