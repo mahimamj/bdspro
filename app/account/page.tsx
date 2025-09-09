@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   CreditCard, 
@@ -12,7 +12,14 @@ import {
   XCircle,
   Copy,
   QrCode,
-  RefreshCw
+  RefreshCw,
+  Upload,
+  Shield,
+  AlertCircle,
+  ChevronDown,
+  Share2,
+  Save,
+  Gift
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -26,53 +33,24 @@ interface PaymentMethod {
   network: string;
 }
 
-interface Payment {
-  orderId: string;
-  amount: number;
-  currency: string;
-  wallet: string;
-  qrCode: string;
-}
-
 export default function MyAccountPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('deposit');
-  const [depositForm, setDepositForm] = useState({
-    amount: '',
-    method: '',
-    note: ''
-  });
-  const [withdrawForm, setWithdrawForm] = useState({
-    amount: '',
-    address: '',
-    note: ''
-  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedNetwork, setSelectedNetwork] = useState('bep20');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string>('');
+  const [showDetails, setShowDetails] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [currentPayment, setCurrentPayment] = useState<Payment | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-      setIsAuthenticated(true);
-      setLoading(false);
-    };
-
-    checkAuth();
     loadPaymentMethods();
-  }, [router]);
+  }, []);
 
   const loadPaymentMethods = async () => {
     try {
-      // Mock payment methods - replace with actual API call
       setPaymentMethods([
         {
-          id: 'usdt-trc20',
+          id: 'trc20',
           name: 'USDT (TRC20)',
           description: 'Tether USD on TRON network',
           minAmount: 50,
@@ -81,7 +59,7 @@ export default function MyAccountPage() {
           network: 'TRON (TRC20)'
         },
         {
-          id: 'usdt-bep20',
+          id: 'bep20',
           name: 'USDT (BEP20)',
           description: 'Tether USD on BSC network',
           minAmount: 50,
@@ -95,362 +73,267 @@ export default function MyAccountPage() {
     }
   };
 
-  const handleDepositSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!depositForm.amount || !depositForm.method) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    const amount = parseFloat(depositForm.amount);
-    if (amount < 50) {
-      toast.error('Minimum investment is 50 USDT. Please enter a valid amount.');
-      return;
-    }
-
-    try {
-      // Find the selected payment method
-      const selectedMethod = paymentMethods.find(method => method.id === depositForm.method);
-      if (!selectedMethod) {
-        toast.error('Invalid payment method selected');
-        return;
-      }
-
-      // Mock payment creation - replace with actual API call
-      const mockPayment: Payment = {
-        orderId: `ORD-${Date.now()}`,
-        amount: parseFloat(depositForm.amount),
-        currency: selectedMethod.name,
-        wallet: selectedMethod.walletAddress,
-        qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${selectedMethod.walletAddress}`
-      };
-
-      setCurrentPayment(mockPayment);
-      toast.success('Payment created successfully!');
-    } catch (error) {
-      console.error('Error creating payment:', error);
-      toast.error('Failed to create payment');
-    }
+  const getCurrentWalletAddress = () => {
+    const method = paymentMethods.find(m => m.id === selectedNetwork);
+    return method?.walletAddress || '';
   };
 
-  const handleWithdrawal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!withdrawForm.amount || !withdrawForm.address) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      // Mock withdrawal - replace with actual API call
-      toast.success('Withdrawal request submitted successfully!');
-      setWithdrawForm({ amount: '', address: '', note: '' });
-    } catch (error) {
-      console.error('Error creating withdrawal:', error);
-      toast.error('Failed to submit withdrawal request');
-    }
+  const getCurrentNetworkName = () => {
+    const method = paymentMethods.find(m => m.id === selectedNetwork);
+    return method?.network || '';
   };
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success('Copied to clipboard!');
+      toast.success('Address copied to clipboard!');
     } catch (err) {
-      toast.error('Failed to copy to clipboard');
+      toast.error('Failed to copy address');
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading account...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+      setUploadedFile(file);
+      setUploadedFileName(file.name);
+      toast.success('Payment proof uploaded successfully!');
+    }
+  };
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  const removeUploadedFile = () => {
+    setUploadedFile(null);
+    setUploadedFileName('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const generateQRCode = () => {
+    const address = getCurrentWalletAddress();
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${address}`;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Account</h1>
-          <p className="text-gray-600">Manage your deposits, withdrawals, and transactions</p>
+          <p className="text-gray-600">Manage your account and deposit funds.</p>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-8 bg-gray-100 p-1 rounded-lg max-w-md mx-auto">
-          <button
-            onClick={() => setActiveTab('deposit')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'deposit'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Deposit
-          </button>
-          <button
-            onClick={() => setActiveTab('withdraw')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'withdraw'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Withdraw
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'history'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            History
-          </button>
+        {/* Account Overview */}
+        <div className="bg-gray-100 rounded-2xl p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4">Account Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg p-4 flex items-center">
+              <div className="bg-blue-100 p-3 rounded-full mr-4">
+                <Wallet className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Account Balance</p>
+                <p className="text-xl font-semibold">$0.00 USDT</p>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 flex items-center">
+              <div className="bg-green-100 p-3 rounded-full mr-4">
+                <CreditCard className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Total Earnings</p>
+                <p className="text-xl font-semibold">$0.00 USDT</p>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 flex items-center">
+              <div className="bg-purple-100 p-3 rounded-full mr-4">
+                <Gift className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Rewards</p>
+                <p className="text-xl font-semibold">$0.00 USDT</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Deposit Tab */}
-        {activeTab === 'deposit' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                <ArrowUpRight className="h-5 w-5 text-green-600" />
-                Deposit Funds
-              </h2>
-              
-              {!currentPayment ? (
-                <form onSubmit={handleDepositSubmit} className="space-y-6 max-w-md">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Amount (USDT)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="50"
-                      value={depositForm.amount}
-                      onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="Enter amount (minimum 50 USDT)"
-                      required
-                    />
-                    <p className="mt-1 text-sm text-amber-600 flex items-center gap-1">
-                      <span className="font-medium">Starter:</span> 50 USDT minimum investment required. Amounts below 50 USDT cannot be processed for payment.
-                    </p>
-                  </div>
+        {/* Deposit USDT Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 relative">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">Deposit USDT</h2>
+            <div className="flex items-center text-green-600 text-sm">
+              <Shield className="h-4 w-4 mr-1" />
+              <span>Secure</span>
+            </div>
+          </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Method
-                    </label>
-                    <select
-                      value={depositForm.method}
-                      onChange={(e) => setDepositForm({ ...depositForm, method: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      required
-                    >
-                      <option value="">Select payment method</option>
-                      {paymentMethods.map((method) => (
-                        <option key={method.id} value={method.id}>
-                          {method.name} - {method.description}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+          {/* QR Code */}
+          <div className="text-center mb-6">
+            <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
+              <img 
+                src={generateQRCode()} 
+                alt="QR Code" 
+                className="w-48 h-48 mx-auto"
+              />
+            </div>
+          </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Note (Optional)
-                    </label>
-                    <textarea
-                      value={depositForm.note}
-                      onChange={(e) => setDepositForm({ ...depositForm, note: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      rows={3}
-                      placeholder="Add a note..."
-                    />
-                  </div>
+          {/* Network Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Network
+            </label>
+            <div className="relative">
+              <select
+                value={selectedNetwork}
+                onChange={(e) => setSelectedNetwork(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+              >
+                <option value="bep20">BSC BNB Smart Chain (BEP20)</option>
+                <option value="trc20">TRX Tron (TRC20)</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
 
+          {/* Deposit Address */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {getCurrentNetworkName()} Deposit Address
+            </label>
+            <div className="flex items-center bg-gray-50 p-3 rounded-lg">
+              <code className="flex-1 text-sm font-mono break-all">
+                {getCurrentWalletAddress()}
+              </code>
+              <button
+                onClick={() => copyToClipboard(getCurrentWalletAddress())}
+                className="ml-2 p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <Copy className="h-4 w-4 text-gray-600" />
+              </button>
+            </div>
+          </div>
+
+          {/* Security Verification */}
+          <div className="bg-blue-50 p-4 rounded-lg mb-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-blue-800">
+                Deposit Address Security Verification
+              </span>
+              <button className="text-blue-600 text-sm font-medium hover:underline">
+                Verify Now →
+              </button>
+            </div>
+          </div>
+
+          {/* Minimum Deposit */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center">
+              <span className="text-sm font-medium text-gray-700">Minimum Deposit</span>
+              <AlertCircle className="h-4 w-4 text-gray-400 ml-1" />
+            </div>
+            <span className="text-sm font-semibold text-gray-900">50 USDT</span>
+          </div>
+
+          {/* Details Section */}
+          <div className="mb-6">
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+            >
+              Details
+              <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
+            </button>
+            {showDetails && (
+              <div className="mt-2 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  • Only send USDT to this address<br/>
+                  • Sending other cryptocurrencies may result in permanent loss<br/>
+                  • Minimum deposit: 50 USDT<br/>
+                  • Processing time: 5-10 minutes
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Upload Payment Proof */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Payment Proof (Optional)
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              {uploadedFile ? (
+                <div className="space-y-2">
+                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
+                  <p className="text-sm text-gray-600">{uploadedFileName}</p>
                   <button
-                    type="submit"
-                    className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    onClick={removeUploadedFile}
+                    className="text-red-600 text-sm hover:underline"
                   >
-                    Create Payment
+                    Remove
                   </button>
-                </form>
+                </div>
               ) : (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold mb-4">Payment Details</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">Order ID: {currentPayment.orderId}</p>
-                      <p className="text-lg font-semibold">Amount: {currentPayment.amount} USDT</p>
-                      <p className="text-sm text-gray-600">Method: {currentPayment.currency}</p>
-                      <p className="text-sm text-gray-600">Network: {paymentMethods.find(m => m.walletAddress === currentPayment.wallet)?.network}</p>
-                    </div>
-                  </div>
-
-                  <div className="text-center">
-                    <h4 className="font-medium mb-2">Send to this address:</h4>
-                    <div className="bg-gray-50 p-3 rounded-lg flex items-center justify-between">
-                      <code className="text-sm break-all">{currentPayment.wallet}</code>
-                      <button
-                        onClick={() => copyToClipboard(currentPayment.wallet)}
-                        className="ml-2 p-1 hover:bg-gray-200 rounded"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="text-center">
-                    <h4 className="font-medium mb-2">Or scan QR code:</h4>
-                    <div className="flex justify-center">
-                      <img 
-                        src={currentPayment.qrCode} 
-                        alt="Payment QR Code" 
-                        className="w-48 h-48 border rounded-lg"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="text-center">
-                    <button
-                      onClick={() => setCurrentPayment(null)}
-                      className="text-primary-600 hover:text-primary-700"
-                    >
-                      Create New Payment
-                    </button>
-                  </div>
+                <div>
+                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 mb-2">
+                    Click to upload payment screenshot
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-blue-600 text-sm font-medium hover:underline"
+                  >
+                    Choose File
+                  </button>
                 </div>
               )}
             </div>
-
-            {/* Payment Methods Info */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">Payment Methods</h3>
-              <div className="space-y-4">
-                {paymentMethods.map((method) => (
-                  <div key={method.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{method.name}</h4>
-                        <p className="text-sm text-gray-600">{method.description}</p>
-                        <p className="text-sm text-gray-500">Network: {method.network}</p>
-                        <p className="text-sm text-gray-500">Min: {method.minAmount} USDT</p>
-                        <p className="text-sm text-gray-500">Est. time: {method.estimatedTime}</p>
-                        <div className="mt-2">
-                          <p className="text-xs text-gray-500">Wallet Address:</p>
-                          <code className="text-xs bg-gray-100 p-1 rounded break-all">{method.walletAddress}</code>
-                        </div>
-                      </div>
-                      <div className="text-right ml-4">
-                        <p className="text-sm font-medium text-green-600">No fees</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Upload a screenshot of your payment for admin verification
+            </p>
           </div>
-        )}
 
-        {/* Withdraw Tab */}
-        {activeTab === 'withdraw' && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <ArrowDownLeft className="h-5 w-5 text-red-600" />
-              Withdraw Funds
-            </h2>
-            
-            <form onSubmit={handleWithdrawal} className="space-y-6 max-w-md">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Amount (USDT)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={withdrawForm.amount}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Enter amount"
-                  required
-                />
-              </div>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <Save className="h-4 w-4" />
+              Save as Image
+            </button>
+            <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <Share2 className="h-4 w-4" />
+              Share Address
+            </button>
+          </div>
+        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Wallet Address
-                </label>
-                <input
-                  type="text"
-                  value={withdrawForm.address}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Enter wallet address"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Note (Optional)
-                </label>
-                <textarea
-                  value={withdrawForm.note}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, note: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  rows={3}
-                  placeholder="Add a note..."
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                Submit Withdrawal Request
+        {/* Warning Message */}
+        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+            <div>
+              <p className="text-sm text-yellow-800">
+                Have an uncredited deposit? If you've made a deposit but it hasn't appeared in your account, please contact support.
+              </p>
+              <button className="text-blue-600 text-sm font-medium hover:underline mt-1">
+                Apply for return →
               </button>
-            </form>
-          </div>
-        )}
-
-        {/* History Tab */}
-        {activeTab === 'history' && (
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              Transaction History
-            </h2>
-            
-            <div className="text-center py-8">
-              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No transactions yet</p>
-              <p className="text-sm text-gray-500">Your transaction history will appear here</p>
             </div>
           </div>
-        )}
-
-        {/* Back to Dashboard */}
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-          >
-            Back to Dashboard
-          </button>
         </div>
       </div>
     </div>
