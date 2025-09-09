@@ -48,12 +48,18 @@ export async function POST(request: NextRequest) {
     const imageUrl = `/uploads/mock_${Date.now()}.jpg`;
     console.log('Inserting record with imageUrl:', imageUrl);
     
-    await db.execute(
-      'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status) VALUES (?, ?, ?, ?, ?, ?)',
-      [mockUserId, mockReferrerId, imageUrl, transactionHash || 'test_hash', amount || '50.00', 'pending']
-    );
-
-    console.log('Database record inserted successfully');
+    try {
+      const [insertResult] = await db.execute(
+        'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status) VALUES (?, ?, ?, ?, ?, ?)',
+        [mockUserId, mockReferrerId, imageUrl, transactionHash || 'test_hash', amount || '50.00', 'pending']
+      );
+      
+      console.log('Database insert result:', insertResult);
+      console.log('Database record inserted successfully with ID:', (insertResult as any).insertId);
+    } catch (insertError) {
+      console.error('Database insert error:', insertError);
+      throw insertError;
+    }
 
     return NextResponse.json({ 
       success: true, 
