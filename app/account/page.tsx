@@ -44,6 +44,7 @@ export default function MyAccountPage() {
   const [transactionHash, setTransactionHash] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   useEffect(() => {
@@ -157,7 +158,19 @@ export default function MyAccountPage() {
       formData.append('amount', '50'); // Default amount for now
       formData.append('referrerId', ''); // Will be fetched from user data
 
-      const response = await fetch('/api/upload-simple', {
+      // Get user email from state or prompt user
+      if (!userEmail) {
+        const email = prompt('Enter your email address:');
+        if (!email) {
+          alert('Email is required to upload payment proof');
+          return;
+        }
+        setUserEmail(email);
+      }
+      
+      formData.append('userEmail', userEmail);
+      
+      const response = await fetch('/api/upload-realtime', {
         method: 'POST',
         body: formData,
       });
@@ -333,6 +346,21 @@ export default function MyAccountPage() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* User Email Input */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Your Email Address
+            </label>
+            <input
+              type="email"
+              value={userEmail}
+              onChange={(e) => setUserEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
           </div>
 
           {/* Upload Payment Proof */}
