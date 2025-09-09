@@ -4,25 +4,28 @@ import mysql from 'mysql2/promise';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== REGISTRATION API START ===');
+    console.log('=== UNIVERSAL REGISTRATION API START ===');
     
     const { name, email, phone, password, referralCode } = await request.json();
     
-    console.log('Registration data received:', {
+    console.log('Registration data received for user:', {
       name,
       email,
-      phone,
+      phone: phone || 'Not provided',
       hasPassword: !!password,
-      referralCode
+      referralCode: referralCode || 'Not provided'
     });
 
     // Validate required fields
-    if (!name || !email || !phone || !password) {
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { error: 'Name, email, phone, and password are required' },
+        { error: 'Name, email, and password are required' },
         { status: 400 }
       );
     }
+    
+    // Set default phone if not provided
+    const userPhone = phone || '0000000000';
 
     // Get database connection
     const db = mysql.createPool({
@@ -73,12 +76,12 @@ export async function POST(request: NextRequest) {
     const newReferralCode = generateReferralCode();
     console.log('Generated referral code:', newReferralCode);
 
-    // Handle referral code if provided
+    // Handle referral code if provided (universal for any user)
     let referrerId = null;
     let referrerName = null;
 
     if (referralCode && referralCode.trim() !== '') {
-      console.log('Processing referral code:', referralCode);
+      console.log('Processing referral code for user:', referralCode);
       
       // Find the referrer by their referral code
       const [referrerResult] = await db.execute(
@@ -89,22 +92,25 @@ export async function POST(request: NextRequest) {
       if (referrerResult.length > 0) {
         referrerId = referrerResult[0].user_id;
         referrerName = referrerResult[0].name;
-        console.log('Found referrer:', { referrerId, referrerName, referralCode });
+        console.log('✅ Referrer found for user:', { referrerId, referrerName, referralCode });
       } else {
-        console.log('Invalid referral code:', referralCode);
+        console.log('❌ Invalid referral code for user:', referralCode);
         return NextResponse.json(
-          { error: 'Invalid referral code' },
+          { 
+            error: 'Invalid referral code',
+            message: `The referral code "${referralCode}" does not exist. Please check and try again.`
+          },
           { status: 400 }
         );
       }
     } else {
-      console.log('No referral code provided');
+      console.log('No referral code provided for user - proceeding without referrer');
     }
 
     // Insert new user
     const [insertResult] = await db.execute(
       'INSERT INTO users (name, email, phone, password_hash, account_balance, total_earning, rewards, referral_code, referrer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, email, phone, passwordHash, 0, 0, 0, newReferralCode, referrerId]
+      [name, email, userPhone, passwordHash, 0, 0, 0, newReferralCode, referrerId]
     ) as any;
 
     const newUserId = insertResult.insertId;
@@ -134,19 +140,29 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'User registered successfully',
+      message: `User ${name} registered successfully!`,
       user: {
         id: newUserId,
         name,
         email,
         referralCode: newReferralCode,
         referrerId,
-        referrerName
-      }
+        referrerName: referrerName || 'No referrer'
+      },
+      referralInfo: referrerId ? {
+        referrerId,
+        referrerName,
+        referralCode
+      } : null
     });
 
   } catch (error) {
     console.error('Error during registration:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
     return NextResponse.json(
       { 
         error: 'Registration failed',
