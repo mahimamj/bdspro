@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
     console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
     
     const body = await request.json();
-    console.log('Request body received:', { name: body.name, email: body.email });
+    console.log('Request body received:', { name: body.name, email: body.email, referralCode: body.referralCode });
     
-    const { name, email, password, confirmPassword } = body;
+    const { name, email, password, confirmPassword, referralCode } = body;
 
     if (!name || !email || !password || !confirmPassword) {
       console.log('Validation failed: Missing required fields');
@@ -105,6 +105,27 @@ export async function POST(request: NextRequest) {
       const referral_code = 'BDS_' + Math.random().toString(36).substr(2, 8).toUpperCase();
       console.log('Generated referral code:', referral_code);
       
+      // Find referrer if referral code provided
+      let referrer_id = null;
+      if (referralCode) {
+        console.log('Looking for referrer with code:', referralCode);
+        try {
+          const [referrer] = await db.execute(
+            'SELECT user_id FROM users WHERE referral_code = ?',
+            [referralCode]
+          ) as any;
+          
+          if (referrer.length > 0) {
+            referrer_id = referrer[0].user_id;
+            console.log('Found referrer with ID:', referrer_id);
+          } else {
+            console.log('No referrer found with code:', referralCode);
+          }
+        } catch (error) {
+          console.error('Error finding referrer:', error);
+        }
+      }
+      
       // Check table structure first
       console.log('Checking users table structure...');
       const [columns] = await db.execute('DESCRIBE users');
@@ -117,16 +138,30 @@ export async function POST(request: NextRequest) {
         email: email,
         password_hash: hashedPassword.substring(0, 20) + '...',
         referral_code: referral_code,
-        referrer_id: null
+        referrer_id: referrer_id
       });
       
       const [result] = await db.execute(
         'INSERT INTO users (name, email, password_hash, referral_code, referrer_id, account_balance, total_earning, rewards, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [name, email, hashedPassword, referral_code, null, 0.00, 0.00, 0.00, '']
+        [name, email, hashedPassword, referral_code, referrer_id, 0.00, 0.00, 0.00, '']
       );
 
       const userId = (result as any).insertId;
       console.log('User created successfully with ID:', userId);
+
+      // Create referral record if referrer exists
+      if (referrer_id) {
+        try {
+          console.log('Creating referral record...');
+          await db.execute(
+            'INSERT INTO referrals (referrer_id, referred_id, level, created_at) VALUES (?, ?, 1, NOW())',
+            [referrer_id, userId]
+          );
+          console.log('Referral record created successfully');
+        } catch (error) {
+          console.error('Error creating referral record:', error);
+        }
+      }
 
       // Generate JWT token
       console.log('Generating JWT token...');
