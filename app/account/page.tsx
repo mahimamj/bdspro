@@ -22,6 +22,8 @@ interface PaymentMethod {
   description: string;
   minAmount: number;
   estimatedTime: string;
+  walletAddress: string;
+  network: string;
 }
 
 interface Payment {
@@ -74,21 +76,18 @@ export default function MyAccountPage() {
           name: 'USDT (TRC20)',
           description: 'Tether USD on TRON network',
           minAmount: 50,
-          estimatedTime: '5-10 minutes'
+          estimatedTime: '5-10 minutes',
+          walletAddress: 'TTxh7Fv9Npov8rZGYzYzwcUWhQzBEpAtzt',
+          network: 'TRON (TRC20)'
         },
         {
-          id: 'usdt-erc20',
-          name: 'USDT (ERC20)',
-          description: 'Tether USD on Ethereum network',
+          id: 'usdt-bep20',
+          name: 'USDT (BEP20)',
+          description: 'Tether USD on BSC network',
           minAmount: 50,
-          estimatedTime: '10-30 minutes'
-        },
-        {
-          id: 'btc',
-          name: 'Bitcoin',
-          description: 'Bitcoin network',
-          minAmount: 50,
-          estimatedTime: '30-60 minutes'
+          estimatedTime: '5-10 minutes',
+          walletAddress: '0xdfca28ad998742570aecb7ffde1fe564b7d42c30',
+          network: 'BSC BNB Smart Chain (BEP20)'
         }
       ]);
     } catch (error) {
@@ -111,13 +110,20 @@ export default function MyAccountPage() {
     }
 
     try {
+      // Find the selected payment method
+      const selectedMethod = paymentMethods.find(method => method.id === depositForm.method);
+      if (!selectedMethod) {
+        toast.error('Invalid payment method selected');
+        return;
+      }
+
       // Mock payment creation - replace with actual API call
       const mockPayment: Payment = {
         orderId: `ORD-${Date.now()}`,
         amount: parseFloat(depositForm.amount),
-        currency: depositForm.method,
-        wallet: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE', // Mock wallet address
-        qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${depositForm.amount}USDT:${depositForm.method}`
+        currency: selectedMethod.name,
+        wallet: selectedMethod.walletAddress,
+        qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${selectedMethod.walletAddress}`
       };
 
       setCurrentPayment(mockPayment);
@@ -290,6 +296,7 @@ export default function MyAccountPage() {
                       <p className="text-sm text-gray-600">Order ID: {currentPayment.orderId}</p>
                       <p className="text-lg font-semibold">Amount: {currentPayment.amount} USDT</p>
                       <p className="text-sm text-gray-600">Method: {currentPayment.currency}</p>
+                      <p className="text-sm text-gray-600">Network: {paymentMethods.find(m => m.walletAddress === currentPayment.wallet)?.network}</p>
                     </div>
                   </div>
 
@@ -336,13 +343,18 @@ export default function MyAccountPage() {
                 {paymentMethods.map((method) => (
                   <div key={method.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start">
-                      <div>
+                      <div className="flex-1">
                         <h4 className="font-medium">{method.name}</h4>
                         <p className="text-sm text-gray-600">{method.description}</p>
+                        <p className="text-sm text-gray-500">Network: {method.network}</p>
                         <p className="text-sm text-gray-500">Min: {method.minAmount} USDT</p>
                         <p className="text-sm text-gray-500">Est. time: {method.estimatedTime}</p>
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-500">Wallet Address:</p>
+                          <code className="text-xs bg-gray-100 p-1 rounded break-all">{method.walletAddress}</code>
+                        </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right ml-4">
                         <p className="text-sm font-medium text-green-600">No fees</p>
                       </div>
                     </div>
