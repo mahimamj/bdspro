@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDS PRO - Crypto Trading & Investment Platform</title>
+    <meta name="description" content="BDS PRO - Empowering traders with high-quality tools, education, and support for crypto trading and investment.">
+    <meta name="keywords" content="crypto trading, investment platform, USDT, cryptocurrency, trading tools">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="BDS PRO - Crypto Trading & Investment Platform">
+    <meta property="og:description" content="Empowering traders with high-quality tools, education, and support for crypto trading and investment.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.bdspro.io">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <span class="logo-text">BDS PRO</span>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#rewards" class="nav-link">Rewards</a>
+                <a href="#community" class="nav-link">Community</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="openModal('login')">Login</button>
+                <button class="btn btn-primary" onclick="openModal('signup')">Sign Up</button>
+            </div>
+            
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-background">
+            <div class="floating-shape shape-1"></div>
+            <div class="floating-shape shape-2"></div>
+            <div class="floating-shape shape-3"></div>
+        </div>
+        
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    <span class="gradient-text">Empower Your Trading</span>
+                    <br>Journey with BDS PRO
+                </h1>
+                <p class="hero-description">
+                    Join thousands of successful traders who trust BDS PRO for their crypto trading and investment needs. 
+                    Get access to advanced tools, expert education, and 24/7 support.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary btn-large" onclick="openModal('signup')">
+                        <i class="fas fa-rocket"></i>
+                        Get Started
+                    </button>
+                    <button class="btn btn-outline btn-large" onclick="scrollToSection('features')">
+                        <i class="fas fa-play"></i>
+                        Learn More
+                    </button>
+                </div>
+            </div>
+            
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">USDT Min Investment</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">6%</div>
+                    <div class="stat-label">Self Investment Return</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Support Available</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose BDS PRO?</h2>
+                <p class="section-description">
+                    Experience the difference with our comprehensive trading platform designed for success
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card" data-aos="fade-up">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="feature-title">Fast Transactions</h3>
+                    <p class="feature-description">
+                        Lightning-fast transaction processing ensuring you never miss a trading opportunity
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="feature-title">Dedicated Team</h3>
+                    <p class="feature-description">
+                        Expert team of professionals committed to your trading success and growth
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3 class="feature-title">24/7 Support</h3>
+                    <p class="feature-description">
+                        Round-the-clock customer support to assist you whenever you need help
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Secure Operations</h3>
+                    <p class="feature-description">
+                        Bank-level security measures to protect your investments and personal data
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Premium Rewards Section -->
+    <section id="rewards" class="rewards">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Premium Rewards</h2>
+                <p class="section-description">
+                    Unlock amazing rewards as you achieve your self-business milestones
+                </p>
+            </div>
+            
+            <div class="rewards-grid">
+                <div class="reward-card" data-aos="fade-up">
+                    <div class="reward-icon">
+                        <i class="fas fa-tablet-alt"></i>
+                    </div>
+                    <h3 class="reward-title">Samsung Tablet</h3>
+                    <p class="reward-description">
+                        Achieve your first milestone and receive a premium Samsung tablet
+                    </p>
+                </div>
+                
+                <div class="reward-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="reward-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="reward-title">iPhone 16 Pro</h3>
+                    <p class="reward-description">
+                        Reach the next level and get the latest iPhone 16 Pro
+                    </p>
+                </div>
+                
+                <div class="reward-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="reward-icon">
+                        <i class="fas fa-laptop"></i>
+                    </div>
+                    <h3 class="reward-title">MacBook M4</h3>
+                    <p class="reward-description">
+                        Advanced milestone reward with the powerful MacBook M4
+                    </p>
+                </div>
+                
+                <div class="reward-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="reward-icon">
+                        <i class="fas fa-motorcycle"></i>
+                    </div>
+                    <h3 class="reward-title">Royal Enfield</h3>
+                    <p class="reward-description">
+                        Premium milestone achievement with a Royal Enfield motorcycle
+                    </p>
+                </div>
+                
+                <div class="reward-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="reward-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <h3 class="reward-title">Tata Nexon</h3>
+                    <p class="reward-description">
+                        Ultimate milestone reward with an electric Tata Nexon
+                    </p>
+                </div>
+            </div>
+            
+            <div class="rewards-info">
+                <h3>How It Works</h3>
+                <p>
+                    Earn rewards based on your self-business performance and milestone achievements. 
+                    Each reward is carefully selected to enhance your lifestyle and productivity.
+                </p>
+                <button class="btn btn-primary" onclick="openModal('signup')">
+                    Start Earning Rewards
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Section -->
+    <section id="community" class="community">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Join Our Community</h2>
+                <p class="section-description">
+                    Connect with fellow traders, share insights, and grow together
+                </p>
+            </div>
+            
+            <div class="community-grid">
+                <div class="community-card" data-aos="fade-up">
+                    <div class="community-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="community-title">Trader Community</h3>
+                    <p class="community-description">
+                        Join thousands of active traders in our vibrant community
+                    </p>
+                </div>
+                
+                <div class="community-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="community-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3 class="community-title">Live Discussions</h3>
+                    <p class="community-description">
+                        Participate in real-time discussions about market trends
+                    </p>
+                </div>
+                
+                <div class="community-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="community-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3 class="community-title">Educational Resources</h3>
+                    <p class="community-description">
+                        Access comprehensive educational materials and tutorials
+                    </p>
+                </div>
+                
+                <div class="community-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="community-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <h3 class="community-title">Webinars & Events</h3>
+                    <p class="community-description">
+                        Attend exclusive webinars and community events
+                    </p>
+                </div>
+            </div>
+            
+            <div class="community-stats">
+                <div class="stat-card">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">Active Traders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Daily Discussions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Monthly Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Get In Touch</h2>
+                <p class="section-description">
+                    Have questions? We're here to help you succeed
+                </p>
+            </div>
+            
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h4>Email</h4>
+                            <p>team.bdspro@gmail.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h4>Website</h4>
+                            <p>www.bdspro.io</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h4>Support Hours</h4>
+                            <p>24/7 Available</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h4>Live Chat</h4>
+                            <p>Available on Website</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="contact-form">
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <input type="text" id="name" name="name" placeholder="Your Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="email" name="email" placeholder="Your Email" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="subject" name="subject" placeholder="Subject" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="message" name="message" placeholder="Your Message" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <i class="fas fa-paper-plane"></i>
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <div class="logo-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span class="logo-text">BDS PRO</span>
+                    </div>
+                    <p class="footer-description">
+                        Empowering traders with high-quality tools, education, and support for crypto trading and investment.
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-telegram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-discord"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#rewards">Rewards</a></li>
+                        <li><a href="#community">Community</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul class="footer-links">
+                        <li><a href="#contact">Contact Us</a></li>
+                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="#tutorials">Tutorials</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul class="footer-links">
+                        <li><a href="#terms">Terms & Conditions</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#disclaimer">Risk Disclaimer</a></li>
+                        <li><a href="#compliance">Compliance</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-info">
+                    <p>&copy; 2024 BDS PRO. All rights reserved.</p>
+                    <p class="risk-disclaimer">
+                        Risk Disclaimer: Cryptocurrency trading involves substantial risk and may result in the loss of your invested capital. 
+                        You should ensure that you fully understand the risks involved and seek independent advice if necessary.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Welcome Back</h3>
+                <span class="close" onclick="closeModal('login')">&times;</span>
+            </div>
+            <form id="loginForm" class="modal-form">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPhone">Phone Number</label>
+                    <input type="tel" id="loginPhone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember">
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+            </form>
+            <div class="modal-footer">
+                <p>Don't have an account? <a href="#" onclick="switchModal('login', 'signup')">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Join BDS PRO</h3>
+                <span class="close" onclick="closeModal('signup')">&times;</span>
+            </div>
+            <form id="signupForm" class="modal-form">
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Email Address</label>
+                    <input type="email" id="signupEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupPhone">Phone Number</label>
+                    <input type="tel" id="signupPhone" name="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupConfirmPassword">Confirm Password</label>
+                    <input type="password" id="signupConfirmPassword" name="confirmPassword" required>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="agree" required>
+                        <span class="checkmark"></span>
+                        I agree to the <a href="#terms">Terms and Conditions</a>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+            </form>
+            <div class="modal-footer">
+                <p>Already have an account? <a href="#" onclick="switchModal('signup', 'login')">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
