@@ -40,6 +40,8 @@ export default function MyAccountPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [showDetails, setShowDetails] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [transactionHash, setTransactionHash] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   useEffect(() => {
@@ -120,6 +122,23 @@ export default function MyAccountPage() {
   const generateQRCode = () => {
     const address = getCurrentWalletAddress();
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${address}`;
+  };
+
+  const handleVerifyDeposit = () => {
+    if (!transactionHash.trim()) {
+      toast.error('Please enter a transaction hash');
+      return;
+    }
+    
+    // Mock verification - replace with actual API call
+    toast.success('Deposit verification submitted! Admin will review your transaction.');
+    setShowVerifyModal(false);
+    setTransactionHash('');
+  };
+
+  const closeVerifyModal = () => {
+    setShowVerifyModal(false);
+    setTransactionHash('');
   };
 
   return (
@@ -228,7 +247,10 @@ export default function MyAccountPage() {
               <span className="text-sm font-medium text-blue-800">
                 Deposit Address Security Verification
               </span>
-              <button className="text-blue-600 text-sm font-medium hover:underline">
+              <button 
+                onClick={() => setShowVerifyModal(true)}
+                className="text-blue-600 text-sm font-medium hover:underline"
+              >
                 Verify Now →
               </button>
             </div>
@@ -336,6 +358,81 @@ export default function MyAccountPage() {
           </div>
         </div>
       </div>
+
+      {/* Verify Deposit Modal */}
+      {showVerifyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Verify Deposit</h3>
+              <button
+                onClick={closeVerifyModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Enter your transaction hash to verify your deposit:
+              </p>
+
+              {/* Network Information */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Network:
+                </label>
+                <p className="text-sm text-gray-900 font-mono">
+                  {getCurrentNetworkName()}
+                </p>
+              </div>
+
+              {/* Address Information */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address:
+                </label>
+                <p className="text-sm text-gray-900 font-mono break-all">
+                  {getCurrentWalletAddress()}
+                </p>
+              </div>
+
+              {/* Transaction Hash Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Transaction Hash
+                </label>
+                <input
+                  type="text"
+                  value={transactionHash}
+                  onChange={(e) => setTransactionHash(e.target.value)}
+                  placeholder="Enter your transaction hash..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                />
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={closeVerifyModal}
+                className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVerifyDeposit}
+                className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Verify Deposit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
