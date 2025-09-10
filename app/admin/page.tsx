@@ -7,7 +7,8 @@ import {
   Users, 
   BarChart3, 
   Settings,
-  ArrowLeft
+  ArrowLeft,
+  Hash
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -43,6 +44,22 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Transaction Proofs</h3>
                 <p className="text-gray-600">View and verify payment proofs</p>
+              </div>
+            </div>
+          </Link>
+
+          {/* Referrals Management */}
+          <Link 
+            href="/admin/referrals"
+            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-orange-100 p-3 rounded-lg">
+                <Hash className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Referral Codes</h3>
+                <p className="text-gray-600">Manage referral codes and tracking</p>
               </div>
             </div>
           </Link>
