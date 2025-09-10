@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     // Set default phone if not provided
     const userPhone = phone || '0000000000';
 
@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
 
     console.log('User verification:', verifyUser[0]);
 
-    return NextResponse.json({
-      success: true,
+      return NextResponse.json({
+        success: true,
       message: `User ${name} registered successfully!`,
       user: {
         id: newUserId,
