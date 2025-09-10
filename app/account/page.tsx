@@ -19,7 +19,8 @@ import {
   ChevronDown,
   Share2,
   Save,
-  Gift
+  Gift,
+  DollarSign
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -73,7 +74,7 @@ export default function MyAccountPage() {
           network: 'BSC BNB Smart Chain (BEP20)'
         }
       ]);
-    } catch (error) {
+      } catch (error) {
       console.error('Error loading payment methods:', error);
     }
   };
@@ -132,7 +133,7 @@ export default function MyAccountPage() {
       toast.error('Please enter a transaction hash');
       return;
     }
-    
+
     // Mock verification - replace with actual API call
     toast.success('Deposit verification submitted! Admin will review your transaction.');
     setShowVerifyModal(false);
@@ -175,7 +176,7 @@ export default function MyAccountPage() {
         body: formData,
       });
 
-      const data = await response.json();
+        const data = await response.json();
 
       if (data.success) {
         setShowSaveModal(true);
@@ -203,6 +204,81 @@ export default function MyAccountPage() {
     setShowSaveModal(false);
   };
 
+  const handleDeposit = async () => {
+    if (!userEmail) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+
+    if (!uploadedFile) {
+      toast.error('Please upload a payment proof image first');
+      return;
+    }
+
+    if (!transactionHash) {
+      toast.error('Please enter the transaction hash');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // First, get user ID from email
+      const userResponse = await fetch(`/api/users/by-email?email=${encodeURIComponent(userEmail)}`);
+      const userData = await userResponse.json();
+      
+      if (!userData.success || !userData.user) {
+        toast.error('User not found. Please check your email address.');
+        return;
+      }
+
+      const userId = userData.user.user_id;
+      const selectedMethod = paymentMethods.find(method => method.id === selectedNetwork);
+      
+      if (!selectedMethod) {
+        toast.error('Invalid payment method selected');
+        return;
+      }
+
+      // Create deposit record
+      const depositResponse = await fetch('/api/deposits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          amount: 50, // Minimum deposit amount
+          payment_method: selectedMethod.id,
+          wallet_address: selectedMethod.walletAddress,
+          transaction_hash: transactionHash,
+          payment_proof_url: uploadedFile ? `/uploads/${uploadedFile.name}` : null
+        }),
+      });
+
+      const depositData = await depositResponse.json();
+
+      if (depositData.success) {
+        toast.success('Deposit submitted successfully! Admin will verify your payment.');
+        
+        // Reset form
+        setUploadedFile(null);
+        setUploadedFileName('');
+        setTransactionHash('');
+        setUserEmail('');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } else {
+        toast.error(depositData.error || 'Failed to submit deposit');
+      }
+    } catch (error) {
+      console.error('Error submitting deposit:', error);
+      toast.error('Failed to submit deposit');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -219,27 +295,27 @@ export default function MyAccountPage() {
             <div className="bg-white rounded-lg p-4 flex items-center">
               <div className="bg-blue-100 p-3 rounded-full mr-4">
                 <Wallet className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Account Balance</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Account Balance</p>
                 <p className="text-xl font-semibold">$0.00 USDT</p>
               </div>
             </div>
             <div className="bg-white rounded-lg p-4 flex items-center">
               <div className="bg-green-100 p-3 rounded-full mr-4">
                 <CreditCard className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Earnings</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total Earnings</p>
                 <p className="text-xl font-semibold">$0.00 USDT</p>
               </div>
             </div>
             <div className="bg-white rounded-lg p-4 flex items-center">
               <div className="bg-purple-100 p-3 rounded-full mr-4">
                 <Gift className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Rewards</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Rewards</p>
                 <p className="text-xl font-semibold">$0.00 USDT</p>
               </div>
             </div>
@@ -363,6 +439,24 @@ export default function MyAccountPage() {
             />
           </div>
 
+          {/* Transaction Hash Input */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Transaction Hash
+            </label>
+            <input
+              type="text"
+              value={transactionHash}
+              onChange={(e) => setTransactionHash(e.target.value)}
+              placeholder="Enter your transaction hash from blockchain"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              You can find this in your wallet transaction history
+            </p>
+          </div>
+
           {/* Upload Payment Proof */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -409,7 +503,7 @@ export default function MyAccountPage() {
 
           {/* Action Buttons */}
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleSaveAsImage}
               disabled={!uploadedFile || isUploading}
               className="flex-1 flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -417,9 +511,13 @@ export default function MyAccountPage() {
               <Save className="h-4 w-4" />
               {isUploading ? 'Saving...' : 'Save as Image'}
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              <Share2 className="h-4 w-4" />
-              Share Address
+            <button 
+              onClick={handleDeposit}
+              disabled={!userEmail || !transactionHash || isUploading}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <DollarSign className="h-4 w-4" />
+              {isUploading ? 'Processing...' : 'Submit Deposit'}
             </button>
           </div>
         </div>
@@ -454,7 +552,7 @@ export default function MyAccountPage() {
                 <XCircle className="h-6 w-6" />
               </button>
             </div>
-
+            
             {/* Modal Content */}
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
@@ -479,20 +577,20 @@ export default function MyAccountPage() {
                 <p className="text-sm text-gray-900 font-mono break-all">
                   {getCurrentWalletAddress()}
                 </p>
-              </div>
+            </div>
 
               {/* Transaction Hash Input */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transaction Hash
-                </label>
-                <input
-                  type="text"
-                  value={transactionHash}
-                  onChange={(e) => setTransactionHash(e.target.value)}
-                  placeholder="Enter your transaction hash..."
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Transaction Hash
+              </label>
+              <input
+                type="text"
+                value={transactionHash}
+                onChange={(e) => setTransactionHash(e.target.value)}
+                placeholder="Enter your transaction hash..."
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-                />
+              />
               </div>
             </div>
 
