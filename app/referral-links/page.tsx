@@ -29,7 +29,21 @@ export default function ReferralLinksPage() {
       const data = await response.json();
 
       if (data.success) {
-        setUsers(data.users);
+        // Ensure all users have unique referral codes
+        const usersWithUniqueCodes = data.users.map((user: UserReferralLink, index: number) => {
+          if (!user.referralCode || user.referralCode === 'BDS123456') {
+            // Generate a unique code if missing or using default
+            const uniqueCode = `BDS${String(user.id).padStart(7, '0')}${String(index).padStart(2, '0')}`;
+            return {
+              ...user,
+              referralCode: uniqueCode,
+              referralLink: `https://bdspro-fawn.vercel.app/signup?ref=${uniqueCode}`
+            };
+          }
+          return user;
+        });
+        
+        setUsers(usersWithUniqueCodes);
         setLastUpdated(new Date());
         setError(null);
       } else {
