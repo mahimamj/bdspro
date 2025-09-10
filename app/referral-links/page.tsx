@@ -34,10 +34,11 @@ export default function ReferralLinksPage() {
           if (!user.referralCode || user.referralCode === 'BDS123456') {
             // Generate a unique code if missing or using default
             const uniqueCode = `BDS${String(user.id).padStart(7, '0')}${String(index).padStart(2, '0')}`;
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bdspro-fawn.vercel.app';
             return {
               ...user,
               referralCode: uniqueCode,
-              referralLink: `https://bdspro-fawn.vercel.app/signup?ref=${uniqueCode}`
+              referralLink: `${baseUrl}/signup?ref=${uniqueCode}`
             };
           }
           return user;
