@@ -50,39 +50,43 @@ export default function ReferralPage() {
 
   const loadReferralData = async () => {
     try {
-      // Mock referral data - replace with actual API call
-      const mockData: ReferralData = {
-        referrals: [
-          {
-            id: 1,
-            name: 'John Doe',
-            email: 'john@example.com',
-            level: 1,
-            joinedAt: '2024-01-15',
-            totalInvested: 1000
-          },
-          {
-            id: 2,
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            level: 1,
-            joinedAt: '2024-01-20',
-            totalInvested: 500
-          },
-          {
-            id: 3,
-            name: 'Bob Johnson',
-            email: 'bob@example.com',
-            level: 2,
-            joinedAt: '2024-01-25',
-            totalInvested: 250
-          }
-        ],
-        referralLink: `${window.location.origin}/signup?ref=BDS123456`,
-        referralCode: 'BDS123456'
-      };
-
-      setReferralData(mockData);
+      setLoading(true);
+      
+      // Get user ID from localStorage or use default
+      const userId = localStorage.getItem('userId') || '7';
+      
+      const response = await fetch(`/api/referrals/user-referrals?userId=${userId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        // Transform API data to match component interface
+        const transformedData: ReferralData = {
+          referrals: [
+            ...data.referrals.level1.map((ref: any) => ({
+              id: ref.id,
+              name: ref.name,
+              email: ref.email,
+              level: 1,
+              joinedAt: ref.joinedDate,
+              totalInvested: parseFloat(ref.totalInvested)
+            })),
+            ...data.referrals.level2.map((ref: any) => ({
+              id: ref.id,
+              name: ref.name,
+              email: ref.email,
+              level: 2,
+              joinedAt: ref.joinedDate,
+              totalInvested: parseFloat(ref.totalInvested)
+            }))
+          ],
+          referralLink: data.user.referralLink,
+          referralCode: data.user.referralCode
+        };
+        
+        setReferralData(transformedData);
+      } else {
+        toast.error(data.error || 'Failed to load referral data');
+      }
     } catch (error) {
       console.error('Error loading referral data:', error);
       toast.error('Failed to load referral data');
