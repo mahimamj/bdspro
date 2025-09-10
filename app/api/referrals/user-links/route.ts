@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       success: true,
       users: usersWithLinks,
       totalUsers: usersWithLinks.length,
-      generatedLinks: usersWithLinks.filter(u => u.isGenerated).length,
+      generatedLinks: usersWithLinks.filter((u: any) => u.isGenerated).length,
       lastUpdated: new Date().toISOString()
     });
 
