@@ -31,8 +31,9 @@ export async function GET(request: NextRequest) {
       await db.execute('SELECT 1 as test');
       console.log('✅ Database connection successful');
     } catch (dbError) {
-      console.error('❌ Database connection failed:', dbError.message);
-      throw new Error(`Database connection failed: ${dbError.message}`);
+      const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
+      console.error('❌ Database connection failed:', errorMessage);
+      throw new Error(`Database connection failed: ${errorMessage}`);
     }
 
     // Get user's referral information
@@ -108,7 +109,8 @@ export async function GET(request: NextRequest) {
       level1Referrals = level1Result;
       console.log('Level 1 referrals found:', level1Referrals.length);
     } catch (error) {
-      console.error('Error fetching Level 1 referrals:', error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error fetching Level 1 referrals:', errorMessage);
       level1Referrals = [];
     }
 
@@ -135,7 +137,8 @@ export async function GET(request: NextRequest) {
       level2Referrals = level2Result;
       console.log('Level 2 referrals found:', level2Referrals.length);
     } catch (error) {
-      console.error('Error fetching Level 2 referrals:', error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error fetching Level 2 referrals:', errorMessage);
       level2Referrals = [];
     }
 
