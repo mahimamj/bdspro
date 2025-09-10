@@ -54,42 +54,52 @@ export default function ReferralPage() {
       
       // Get user ID from localStorage or use default
       const userId = localStorage.getItem('userId') || '7';
+      console.log('Loading referral data for user:', userId);
       
       const response = await fetch(`/api/referrals/user-referrals?userId=${userId}`);
+      console.log('API response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('API response data:', data);
       
       if (data.success) {
         // Transform API data to match component interface
         const transformedData: ReferralData = {
           referrals: [
-            ...data.referrals.level1.map((ref: any) => ({
+            ...(data.referrals.level1 || []).map((ref: any) => ({
               id: ref.id,
               name: ref.name,
               email: ref.email,
               level: 1,
               joinedAt: ref.joinedDate,
-              totalInvested: parseFloat(ref.totalInvested)
+              totalInvested: parseFloat(ref.totalInvested || 0)
             })),
-            ...data.referrals.level2.map((ref: any) => ({
+            ...(data.referrals.level2 || []).map((ref: any) => ({
               id: ref.id,
               name: ref.name,
               email: ref.email,
               level: 2,
               joinedAt: ref.joinedDate,
-              totalInvested: parseFloat(ref.totalInvested)
+              totalInvested: parseFloat(ref.totalInvested || 0)
             }))
           ],
           referralLink: data.user.referralLink,
           referralCode: data.user.referralCode
         };
         
+        console.log('Transformed data:', transformedData);
         setReferralData(transformedData);
       } else {
+        console.error('API error:', data.error);
         toast.error(data.error || 'Failed to load referral data');
       }
     } catch (error) {
       console.error('Error loading referral data:', error);
-      toast.error('Failed to load referral data');
+      toast.error('Network error: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }
