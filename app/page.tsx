@@ -56,6 +56,8 @@ export default function HomePage() {
               <a href="#features" className="text-gray-700 hover:text-blue-500 font-medium">Features</a>
               <a href="#plans" className="text-gray-700 hover:text-blue-500 font-medium">Plans</a>
               <a href="#contact" className="text-gray-700 hover:text-blue-500 font-medium">Contact</a>
+              <a href="/deposits" className="text-gray-700 hover:text-blue-500 font-medium">Live Deposits</a>
+              <a href="/referral-links" className="text-gray-700 hover:text-blue-500 font-medium">Referral Links</a>
               <button 
                 onClick={handleAdminClick}
                 className="text-gray-700 hover:text-red-500 font-medium"
