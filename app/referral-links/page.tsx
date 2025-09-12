@@ -31,7 +31,7 @@ export default function ReferralLinksPage() {
       if (data.success) {
         // Use the referral codes from the database
         const usersWithDatabaseCodes = data.users.map((user: UserReferralLink) => {
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bdspro-fawn.vercel.app';
+          const baseUrl = 'https://bdspro-fawn.vercel.app';
           return {
             ...user,
             referralLink: `${baseUrl}/signup?ref=${user.referralCode}`
