@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
     console.log('Fetching Level 1 referrals...');
     let level1Referrals = [];
     try {
+      // First try with deposits table
       const [level1Result] = await db.execute(`
         SELECT 
           u.user_id,
@@ -83,17 +84,37 @@ export async function GET(request: NextRequest) {
         ORDER BY u.created_at DESC
       `, [userId]) as any;
       level1Referrals = level1Result;
-      console.log('Level 1 referrals found:', level1Referrals.length);
+      console.log('Level 1 referrals found with deposits:', level1Referrals.length);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error fetching Level 1 referrals:', errorMessage);
-      level1Referrals = [];
+      console.log('Deposits table not found, trying without deposits...');
+      // Fallback: get referrals without deposits table
+      try {
+        const [level1Result] = await db.execute(`
+          SELECT 
+            u.user_id,
+            u.name,
+            u.email,
+            u.created_at,
+            0 as total_invested,
+            0 as deposit_count
+          FROM users u
+          WHERE u.referrer_id = ?
+          ORDER BY u.created_at DESC
+        `, [userId]) as any;
+        level1Referrals = level1Result;
+        console.log('Level 1 referrals found without deposits:', level1Referrals.length);
+      } catch (fallbackError) {
+        const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+        console.error('Error fetching Level 1 referrals:', errorMessage);
+        level1Referrals = [];
+      }
     }
 
     // Get Level 2 referrals (referrals of referrals)
     console.log('Fetching Level 2 referrals...');
     let level2Referrals = [];
     try {
+      // First try with deposits table
       const [level2Result] = await db.execute(`
         SELECT 
           u2.user_id,
@@ -111,11 +132,32 @@ export async function GET(request: NextRequest) {
         ORDER BY u2.created_at DESC
       `, [userId]) as any;
       level2Referrals = level2Result;
-      console.log('Level 2 referrals found:', level2Referrals.length);
+      console.log('Level 2 referrals found with deposits:', level2Referrals.length);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error fetching Level 2 referrals:', errorMessage);
-      level2Referrals = [];
+      console.log('Deposits table not found, trying without deposits...');
+      // Fallback: get referrals without deposits table
+      try {
+        const [level2Result] = await db.execute(`
+          SELECT 
+            u2.user_id,
+            u2.name,
+            u2.email,
+            u2.created_at,
+            0 as total_invested,
+            0 as deposit_count,
+            u1.name as level1_referral_name
+          FROM users u1
+          JOIN users u2 ON u2.referrer_id = u1.user_id
+          WHERE u1.referrer_id = ?
+          ORDER BY u2.created_at DESC
+        `, [userId]) as any;
+        level2Referrals = level2Result;
+        console.log('Level 2 referrals found without deposits:', level2Referrals.length);
+      } catch (fallbackError) {
+        const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+        console.error('Error fetching Level 2 referrals:', errorMessage);
+        level2Referrals = [];
+      }
     }
 
     // Calculate total earnings
