@@ -18,8 +18,40 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || !email || !password) {
+      console.log('❌ Missing required fields:', { name: !!name, email: !!email, password: !!password });
       return NextResponse.json(
-        { error: 'Name, email, and password are required' },
+        { 
+          success: false,
+          error: 'Name, email, and password are required',
+          message: 'Please fill in all required fields'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log('❌ Invalid email format:', email);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Invalid email format',
+          message: 'Please enter a valid email address'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      console.log('❌ Password too short:', password.length);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Password too short',
+          message: 'Password must be at least 6 characters long'
+        },
         { status: 400 }
       );
     }
@@ -140,35 +172,43 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-      message: `User ${name} registered successfully!`,
-      user: {
-        id: newUserId,
-        name,
-        email,
-        referralCode: newReferralCode,
-        referrerId,
-        referrerName: referrerName || 'No referrer'
-      },
-      referralInfo: referrerId ? {
-        referrerId,
-        referrerName,
-        referralCode
-      } : null
-    });
+        message: `User ${name} registered successfully!`,
+        data: {
+          user: {
+            id: newUserId,
+            name,
+            email,
+            referralCode: newReferralCode,
+            referrerId,
+            referrerName: referrerName || 'No referrer'
+          },
+          referralInfo: referrerId ? {
+            referrerId,
+            referrerName,
+            referralCode
+          } : null
+        }
+      });
 
   } catch (error) {
+    console.error('=== REGISTRATION ERROR ===');
     console.error('Error during registration:', error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       name: error instanceof Error ? error.name : undefined
     });
-    return NextResponse.json(
-      { 
-        error: 'Registration failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    
+    // Return more specific error information
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = {
+      error: 'Registration failed',
+      message: errorMessage,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.error('Returning error response:', errorDetails);
+    
+    return NextResponse.json(errorDetails, { status: 500 });
   }
 }

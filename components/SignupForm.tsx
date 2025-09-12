@@ -64,12 +64,8 @@ const SignupFormContent = () => {
       console.log('Signup response:', { status: response.status, result });
 
       if (response.ok && result.success) {
-        // Store token and user data
-        if (result.data.token) {
-          localStorage.setItem('authToken', result.data.token);
-          console.log('Token stored:', result.data.token);
-        }
-        if (result.data.user) {
+        // Store user data (registration doesn't return token)
+        if (result.data && result.data.user) {
           localStorage.setItem('userData', JSON.stringify(result.data.user));
           console.log('User data stored:', result.data.user);
         }
@@ -78,7 +74,7 @@ const SignupFormContent = () => {
         router.push('/dashboard');
       } else {
         console.error('Signup failed:', result);
-        throw new Error(result.message || 'Registration failed');
+        throw new Error(result.message || result.error || 'Registration failed');
       }
     } catch (error: any) {
       console.error('Signup error:', error);
