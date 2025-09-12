@@ -23,8 +23,8 @@ interface ReferralData {
     joinedAt: string;
     totalInvested: number;
   }>;
-  referralLink: string;
-  referralCode: string;
+  referralLink?: string;
+  referralCode?: string;
 }
 
 export default function ReferralPage() {
@@ -154,27 +154,30 @@ export default function ReferralPage() {
         const data = await response.json();
         if (data.success) {
           // Update only the referrals data, keep the referral code from localStorage
-          setReferralData(prev => ({
-            ...prev,
-            referrals: [
-              ...(data.referrals.level1 || []).map((ref: any) => ({
-                id: ref.id,
-                name: ref.name,
-                email: ref.email,
-                level: 1,
-                joinedAt: ref.joinedDate,
-                totalInvested: parseFloat(ref.totalInvested || 0)
-              })),
-              ...(data.referrals.level2 || []).map((ref: any) => ({
-                id: ref.id,
-                name: ref.name,
-                email: ref.email,
-                level: 2,
-                joinedAt: ref.joinedDate,
-                totalInvested: parseFloat(ref.totalInvested || 0)
-              }))
-            ]
-          }));
+          setReferralData(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              referrals: [
+                ...(data.referrals.level1 || []).map((ref: any) => ({
+                  id: ref.id,
+                  name: ref.name,
+                  email: ref.email,
+                  level: 1,
+                  joinedAt: ref.joinedDate,
+                  totalInvested: parseFloat(ref.totalInvested || 0)
+                })),
+                ...(data.referrals.level2 || []).map((ref: any) => ({
+                  id: ref.id,
+                  name: ref.name,
+                  email: ref.email,
+                  level: 2,
+                  joinedAt: ref.joinedDate,
+                  totalInvested: parseFloat(ref.totalInvested || 0)
+                }))
+              ]
+            };
+          });
         }
       }
     } catch (error) {
