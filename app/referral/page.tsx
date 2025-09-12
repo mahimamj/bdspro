@@ -52,17 +52,40 @@ export default function ReferralPage() {
     try {
       setLoading(true);
       
-      // Get user ID from localStorage or userData
+      // First, try to get referral code from localStorage (from login response)
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        console.log('User data from localStorage:', user);
+        
+        if (user.referral_code) {
+          // Use referral code from login response
+          const baseUrl = 'https://bdspro-fawn.vercel.app';
+          const referralLink = `${baseUrl}/signup?ref=${user.referral_code}`;
+          
+          const transformedData: ReferralData = {
+            referrals: [], // Will be loaded separately if needed
+            referralLink: referralLink,
+            referralCode: user.referral_code
+          };
+          
+          console.log('Using referral code from localStorage:', transformedData);
+          setReferralData(transformedData);
+          
+          // Still load referral statistics from API
+          await loadReferralStats(user.user_id || user.id);
+          return;
+        }
+      }
+      
+      // Fallback: Get user ID and make API call
       let userId = localStorage.getItem('userId');
-      if (!userId) {
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-          const user = JSON.parse(userData);
-          const extractedUserId = user.user_id || user.id;
-          if (extractedUserId) {
-            userId = extractedUserId;
-            localStorage.setItem('userId', extractedUserId);
-          }
+      if (!userId && userData) {
+        const user = JSON.parse(userData);
+        const extractedUserId = user.user_id || user.id;
+        if (extractedUserId) {
+          userId = extractedUserId;
+          localStorage.setItem('userId', extractedUserId);
         }
       }
       
@@ -121,6 +144,41 @@ export default function ReferralPage() {
       toast.error('Network error: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadReferralStats = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/referrals/user-referrals?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Update only the referrals data, keep the referral code from localStorage
+          setReferralData(prev => ({
+            ...prev,
+            referrals: [
+              ...(data.referrals.level1 || []).map((ref: any) => ({
+                id: ref.id,
+                name: ref.name,
+                email: ref.email,
+                level: 1,
+                joinedAt: ref.joinedDate,
+                totalInvested: parseFloat(ref.totalInvested || 0)
+              })),
+              ...(data.referrals.level2 || []).map((ref: any) => ({
+                id: ref.id,
+                name: ref.name,
+                email: ref.email,
+                level: 2,
+                joinedAt: ref.joinedDate,
+                totalInvested: parseFloat(ref.totalInvested || 0)
+              }))
+            ]
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading referral stats:', error);
     }
   };
 

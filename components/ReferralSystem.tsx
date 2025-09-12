@@ -52,6 +52,29 @@ export default function ReferralSystem() {
         return;
       }
 
+      // First, try to get referral code from localStorage (from login response)
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        console.log('User data from localStorage:', user);
+        
+        if (user.referral_code) {
+          // Use referral code from login response
+          const baseUrl = 'https://bdspro-fawn.vercel.app';
+          const referralLink = `${baseUrl}/signup?ref=${user.referral_code}`;
+          
+          setReferralLink({
+            referral_code: user.referral_code,
+            referral_link: referralLink
+          });
+          
+          console.log('Using referral code from localStorage:', user.referral_code);
+          // Still try to fetch stats from API
+          await fetchReferralStats();
+          return;
+        }
+      }
+
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
       // Try to fetch referral link
