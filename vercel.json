@@ -1,14 +1,6 @@
 {
-  "env": {
-    "MYSQL_HOST": "hopper.proxy.rlwy.net",
-    "MYSQL_PORT": "50359",
-    "MYSQL_USER": "root",
-    "MYSQL_PASSWORD": "QxNkIyShqDFSigZzxHaxiyZmqtzekoXL",
-    "MYSQL_DATABASE": "railway",
-    "JWT_SECRET": "demo_jwt_secret_key_for_development",
-    "EMAIL_USER": "joshimahima798@gmail.com",
-    "EMAIL_PASS": "bwbj yopj iros lujw",
-    "EMAIL_FROM": "BDS PRO <noreply@bdspro.com>",
-    "NEXT_PUBLIC_BASE_URL": "https://bdspro-fawn.vercel.app"
-  }
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs"
 }
