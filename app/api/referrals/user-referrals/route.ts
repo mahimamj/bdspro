@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     const totalCommission = level1Commission + level2Commission;
 
     // Generate referral link
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bdspro-fawn.vercel.app';
+    const baseUrl = 'https://bdspro-fawn.vercel.app';
     const referralLink = `${baseUrl}/signup?ref=${user.referral_code}`;
 
     // Format referrals for frontend

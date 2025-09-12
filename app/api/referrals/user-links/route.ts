@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     `) as any;
 
     // Generate referral links for users who don't have them
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bdspro-fawn.vercel.app';
+    const baseUrl = 'https://bdspro-fawn.vercel.app';
     const usersWithLinks = users.map((user: any) => {
       const referralLink = user.referral_link || `${baseUrl}/signup?ref=${user.referral_code}`;
       return {

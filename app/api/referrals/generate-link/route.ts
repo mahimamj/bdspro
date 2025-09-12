@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate referral link
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bdspro-fawn.vercel.app';
+    const baseUrl = 'https://bdspro-fawn.vercel.app';
     const referralLink = `${baseUrl}/signup?ref=${referralCode}`;
 
     // Store referral link in database (create referral_links table if not exists)

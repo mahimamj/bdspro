@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     console.log('Reset token stored in database:', resetToken);
 
     // Generate reset link
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bdspro-fawn.vercel.app';
+    const baseUrl = 'https://bdspro-fawn.vercel.app';
     const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
     
     console.log('Reset link generated:', resetLink);
