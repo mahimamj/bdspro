@@ -68,12 +68,9 @@ export default function ReferralSystem() {
           setReferralLink(linkData.data);
         }
       } catch (linkError) {
-        console.log('Backend not available, using demo data');
-        // Use demo data if backend is not available
-        setReferralLink({
-          referral_code: 'BDS' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-          referral_link: `${window.location.origin}/signup?ref=BDS${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-        });
+        console.error('Error fetching referral link:', linkError);
+        // Don't generate random codes - show error state instead
+        setReferralLink(null);
       }
 
       // Try to fetch referral stats
@@ -194,13 +191,14 @@ export default function ReferralSystem() {
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    value={referralLink.referral_code}
+                    value={referralLink?.referral_code || 'Loading...'}
                     readOnly
                     className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-50 font-mono"
                   />
                   <button
-                    onClick={() => copyToClipboard(referralLink.referral_code)}
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                    onClick={() => copyToClipboard(referralLink?.referral_code || '')}
+                    disabled={!referralLink?.referral_code}
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     <Copy className="h-4 w-4" />
                   </button>
@@ -214,13 +212,14 @@ export default function ReferralSystem() {
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    value={referralLink.referral_link}
+                    value={referralLink?.referral_link || 'Loading...'}
                     readOnly
                     className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-50 text-sm"
                   />
                   <button
-                    onClick={() => copyToClipboard(referralLink.referral_link)}
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                    onClick={() => copyToClipboard(referralLink?.referral_link || '')}
+                    disabled={!referralLink?.referral_link}
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     <Copy className="h-4 w-4" />
                   </button>

@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
         id: user.user_id,
         name: user.name,
         email: user.email,
-        referralCode: user.referral_code || 'BDS' + Math.random().toString(36).substr(2, 7).toUpperCase(),
+        referralCode: user.referral_code,
         referralLink,
         referrerName: user.referrer_name
       },

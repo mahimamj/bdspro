@@ -82,7 +82,8 @@ export async function POST(request: NextRequest) {
         email: user.email,
         account_balance: user.account_balance || 0.00,
         total_earning: user.total_earning || 0.00,
-        rewards: user.rewards || 0.00
+        rewards: user.rewards || 0.00,
+        referral_code: user.referral_code
       };
 
       console.log('Login successful, returning user data:', userData);

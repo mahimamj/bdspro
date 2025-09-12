@@ -10,11 +10,11 @@ import {
   Clock, 
   CheckCircle, 
   XCircle,
-  Copy,
-  QrCode,
+  Copy, 
+  QrCode, 
   RefreshCw,
   Upload,
-  Shield,
+  Shield, 
   AlertCircle,
   ChevronDown,
   Share2,
@@ -511,7 +511,7 @@ export default function MyAccountPage() {
               <Save className="h-4 w-4" />
               {isUploading ? 'Saving...' : 'Save as Image'}
             </button>
-            <button 
+            <button
               onClick={handleDeposit}
               disabled={!userEmail || !transactionHash || isUploading}
               className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

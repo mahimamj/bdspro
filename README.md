@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # BDS PRO - Crypto Trading & Investment Platform
 
 A modern, responsive website for BDS PRO, a crypto trading and investment platform. Built with Next.js, TypeScript, Tailwind CSS, and Framer Motion.
@@ -163,3 +164,7 @@ For support, email team.bdspro@gmail.com or visit www.bdspro.io
 =======
 # bdspro
 >>>>>>> 60417f84bfa8ef9fe3f0bba8bb549a1854ca5e75
+=======
+"# _ALGO-WIZ_" 
+"# ALGO-WIZ" 
+>>>>>>> 7122e49a5aa944c6946a992a18cc0bc73c68c1eb

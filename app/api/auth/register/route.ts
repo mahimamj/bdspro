@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
       'SELECT user_id FROM users WHERE email = ?',
       [email]
     ) as any;
-
-    if (existingUsers.length > 0) {
+      
+      if (existingUsers.length > 0) {
       console.log('User already exists with email:', email);
       return NextResponse.json(
         { error: 'User with this email already exists' },
@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
     // Hash password
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
-    console.log('Password hashed successfully');
-
+      console.log('Password hashed successfully');
+      
     // Generate unique referral code
     const generateReferralCode = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
