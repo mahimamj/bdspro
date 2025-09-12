@@ -3,13 +3,64 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, User, Users, LayoutGrid, Wallet, TrendingUp, Gift, Briefcase, ArrowUpRight } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'react-hot-toast';
+import { 
+  LogOut, 
+  User, 
+  Users, 
+  LayoutGrid, 
+  Wallet, 
+  TrendingUp, 
+  Gift, 
+  Briefcase, 
+  ArrowUpRight,
+  Copy,
+  Check,
+  QrCode,
+  Download,
+  Share2,
+  Shield,
+  Info,
+  ChevronDown,
+  Upload,
+  Clock,
+  CheckCircle,
+  XCircle,
+  RefreshCw
+} from 'lucide-react';
 
 type StatCard = {
   title: string;
   value: string;
   icon: React.ComponentType<{ className?: string }>;
 };
+
+interface DepositAddress {
+  network: string;
+  address: string;
+  minAmount: string;
+  qrCode: string;
+}
+
+interface PaymentFormData {
+  name: string;
+  email: string;
+  amount: number;
+  network: 'TRC20' | 'BEP20';
+  screenshot: FileList;
+}
+
+interface Payment {
+  _id: string;
+  name: string;
+  email: string;
+  amount: number;
+  network: 'TRC20' | 'BEP20';
+  status: 'pending' | 'paid' | 'rejected';
+  createdAt: string;
+  paidAt?: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -28,6 +79,37 @@ export default function DashboardPage() {
   // User data state
   const [userData, setUserData] = useState<any>(null);
   const [userLoading, setUserLoading] = useState(true);
+  
+  // Payment system states
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [userPayments, setUserPayments] = useState<Payment[]>([]);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [paymentSubmitted, setPaymentSubmitted] = useState(false);
+  const [submittedPaymentId, setSubmittedPaymentId] = useState<string | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [selectedNetwork, setSelectedNetwork] = useState('BEP20');
+  const [showDetails, setShowDetails] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [transactionHash, setTransactionHash] = useState('');
+  const [verifying, setVerifying] = useState(false);
+
+  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm<PaymentFormData>();
+
+  // Cryptocurrency deposit addresses
+  const depositAddresses: Record<string, DepositAddress> = {
+    BEP20: {
+      network: 'BSC BNB Smart Chain (BEP20)',
+      address: '0xdfca28ad998742570aecb7ffde1fe564b7d42c30',
+      minAmount: '50',
+      qrCode: '/qr-bep20.png'
+    },
+    TRC20: {
+      network: 'TRX Tron (TRC20)',
+      address: 'TTxh7Fv9Npov8rZGYzYzwcUWhQzBEpAtzt',
+      minAmount: '50',
+      qrCode: '/qr-trc20.png'
+    }
+  };
 
   // Check authentication on component mount
   useEffect(() => {
@@ -168,10 +250,145 @@ export default function DashboardPage() {
     fetchUserData();
   }, [isAuthenticated, loading]);
 
+  // Fetch user payments
+  useEffect(() => {
+    const fetchUserPayments = async () => {
+      if (!userData?.email) return;
+      
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        const response = await fetch(`${baseUrl}/api/payments?email=${encodeURIComponent(userData.email)}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setUserPayments(result.data.payments || []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user payments:', error);
+      }
+    };
+
+    fetchUserPayments();
+  }, [userData?.email]);
+
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
     router.push('/login');
+  };
+
+  // Payment functions
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedAddress(text);
+      toast.success('Address copied to clipboard!');
+      setTimeout(() => setCopiedAddress(null), 2000);
+    } catch (err) {
+      toast.error('Failed to copy address');
+    }
+  };
+
+  const downloadQRCode = () => {
+    const link = document.createElement('a');
+    link.href = depositAddresses[selectedNetwork].qrCode;
+    link.download = `usdt-deposit-${selectedNetwork.toLowerCase()}.png`;
+    link.click();
+  };
+
+  const shareAddress = async () => {
+    const address = depositAddresses[selectedNetwork].address;
+    const network = depositAddresses[selectedNetwork].network;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'USDT Deposit Address',
+          text: `Deposit USDT to ${network}: ${address}`,
+        });
+      } catch (err) {
+        console.log('Error sharing:', err);
+      }
+    } else {
+      copyToClipboard(address);
+    }
+  };
+
+  const onSubmitPayment = async (data: PaymentFormData) => {
+    // Validate minimum amount
+    if (data.amount < 50) {
+      toast.error('Minimum deposit amount is 50 USDT');
+      return;
+    }
+
+    setIsSubmittingPayment(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('email', data.email);
+      formData.append('amount', data.amount.toString());
+      formData.append('network', data.network);
+      formData.append('screenshot', data.screenshot[0]);
+
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${baseUrl}/api/payments`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmittedPaymentId(result.data.id);
+        setPaymentSubmitted(true);
+        toast.success('Payment submitted successfully!');
+        reset();
+        // Refresh payments list
+        const paymentsResponse = await fetch(`${baseUrl}/api/payments?email=${encodeURIComponent(data.email)}`);
+        if (paymentsResponse.ok) {
+          const paymentsResult = await paymentsResponse.json();
+          if (paymentsResult.success) {
+            setUserPayments(paymentsResult.data.payments || []);
+          }
+        }
+      } else {
+        toast.error(result.message || 'Failed to submit payment');
+      }
+    } catch (error) {
+      console.error('Payment submission error:', error);
+      toast.error('Failed to submit payment. Please try again.');
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'paid':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'paid':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
   };
 
   if (loading) {
@@ -300,6 +517,315 @@ export default function DashboardPage() {
               />
             ))}
           </div>
+
+          {/* Payment Section */}
+          <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-extrabold text-gray-900">Deposit USDT</h2>
+                <p className="text-sm text-gray-500">Add funds to your account</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-green-500" />
+                <span className="text-sm text-green-600 font-medium">Secure</span>
+              </div>
+            </div>
+
+            {/* Payment Method Toggle */}
+            <div className="mb-6">
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setShowPaymentForm(false)}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    !showPaymentForm
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Quick Deposit
+                </button>
+                <button
+                  onClick={() => setShowPaymentForm(true)}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    showPaymentForm
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Submit Payment
+                </button>
+              </div>
+            </div>
+
+            {!showPaymentForm ? (
+              <>
+                {/* QR Code */}
+                <div className="text-center mb-6">
+                  <div className="inline-block p-4 bg-white rounded-2xl shadow-sm border border-gray-200">
+                    <img 
+                      src={depositAddresses[selectedNetwork].qrCode} 
+                      alt="USDT Deposit QR Code"
+                      className="w-64 h-64 mx-auto"
+                    />
+                  </div>
+                </div>
+
+                {/* Network Selection */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Network
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedNetwork}
+                      onChange={(e) => setSelectedNetwork(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-white"
+                    >
+                      <option value="BEP20">BSC BNB Smart Chain (BEP20)</option>
+                      <option value="TRC20">TRX Tron (TRC20)</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Deposit Address */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {depositAddresses[selectedNetwork].network} Deposit Address
+                  </label>
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <code className="flex-1 text-sm font-mono text-gray-900 break-all">
+                      {depositAddresses[selectedNetwork].address}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(depositAddresses[selectedNetwork].address)}
+                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                    >
+                      {copiedAddress === depositAddresses[selectedNetwork].address ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4 text-gray-500" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Minimum Deposit */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-700">Minimum Deposit</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">
+                      {depositAddresses[selectedNetwork].minAmount} USDT
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={downloadQRCode}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                    Save as Image
+                  </button>
+                  <button
+                    onClick={shareAddress}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Share Address
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Payment Form */}
+                <div className="mb-6">
+                  <form onSubmit={handleSubmit(onSubmitPayment)} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Full Name
+                        </label>
+                        <input
+                          {...register('name', { required: 'Name is required' })}
+                          type="text"
+                          defaultValue={userData?.name || ''}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          placeholder="Enter your full name"
+                        />
+                        {errors.name && (
+                          <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Email Address
+                        </label>
+                        <input
+                          {...register('email', { 
+                            required: 'Email is required',
+                            pattern: {
+                              value: /^\S+@\S+$/i,
+                              message: 'Invalid email address'
+                            }
+                          })}
+                          type="email"
+                          defaultValue={userData?.email || ''}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          placeholder="Enter your email address"
+                        />
+                        {errors.email && (
+                          <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Amount (USDT)
+                        </label>
+                        <input
+                          {...register('amount', { 
+                            required: 'Amount is required',
+                            min: { value: 50, message: 'Minimum amount is 50 USDT' }
+                          })}
+                          type="number"
+                          step="0.01"
+                          min="50"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          placeholder="50.00"
+                        />
+                        {errors.amount && (
+                          <p className="text-red-500 text-sm mt-1">{errors.amount.message}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Network
+                        </label>
+                        <select
+                          {...register('network', { required: 'Network is required' })}
+                          value={selectedNetwork}
+                          onChange={(e) => setSelectedNetwork(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        >
+                          <option value="TRC20">TRX Tron (TRC20)</option>
+                          <option value="BEP20">BSC BNB Smart Chain (BEP20)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Transaction Screenshot
+                      </label>
+                      <input
+                        {...register('screenshot', { required: 'Screenshot is required' })}
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-600 file:text-white hover:file:bg-primary-700"
+                      />
+                      <p className="text-gray-500 text-sm mt-1">
+                        Upload a screenshot of your blockchain transaction (JPG/PNG, max 5MB)
+                      </p>
+                      {errors.screenshot && (
+                        <p className="text-red-500 text-sm mt-1">{errors.screenshot.message}</p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmittingPayment}
+                      className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+                    >
+                      {isSubmittingPayment ? 'Submitting Payment...' : 'Submit Payment'}
+                    </button>
+                  </form>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Payment History Section */}
+          {userPayments.length > 0 && (
+            <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-extrabold text-gray-900">Payment History</h2>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span className="text-sm font-medium">Refresh</span>
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Network
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {userPayments.map((payment) => (
+                      <tr key={payment._id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {payment.amount} USDT
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{payment.network}</div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(payment.status)}`}>
+                            {getStatusIcon(payment.status)}
+                            <span className="ml-1 capitalize">{payment.status}</span>
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {new Date(payment.createdAt).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => window.open(`/payment-status?id=${payment._id}`, '_blank')}
+                            className="text-primary-600 hover:text-primary-900 transition-colors"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Transactions table */}
           {selectedCategory && selectedCategory.toLowerCase() !== 'rewards' && (
