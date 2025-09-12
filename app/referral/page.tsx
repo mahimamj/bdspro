@@ -52,8 +52,24 @@ export default function ReferralPage() {
     try {
       setLoading(true);
       
-      // Get user ID from localStorage or use default
-      const userId = localStorage.getItem('userId') || '7';
+      // Get user ID from localStorage or userData
+      let userId = localStorage.getItem('userId');
+      if (!userId) {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const user = JSON.parse(userData);
+          userId = user.user_id || user.id;
+          localStorage.setItem('userId', userId);
+        }
+      }
+      
+      if (!userId) {
+        console.error('No user ID found');
+        toast.error('Please log in to view referral data');
+        router.push('/login');
+        return;
+      }
+      
       console.log('Loading referral data for user:', userId);
       
       const response = await fetch(`/api/referrals/user-referrals?userId=${userId}`);
