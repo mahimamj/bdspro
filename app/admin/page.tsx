@@ -81,6 +81,22 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
+          {/* Payment Management */}
+          <Link 
+            href="/admin/payments"
+            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-purple-100 p-3 rounded-lg">
+                <DollarSign className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Payment Management</h3>
+                <p className="text-gray-600">Verify cryptocurrency payments</p>
+              </div>
+            </div>
+          </Link>
+
           {/* Users Management */}
           <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow cursor-not-allowed opacity-50">
             <div className="flex items-center gap-4">

@@ -1,0 +1,395 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { 
+  Eye, 
+  Check, 
+  X, 
+  Clock, 
+  DollarSign, 
+  User, 
+  Mail, 
+  Calendar,
+  Search,
+  Filter,
+  RefreshCw
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+
+interface Payment {
+  id: string;
+  fullName: string;
+  email: string;
+  amount: number;
+  network: string;
+  screenshot: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+  adminNotes?: string;
+}
+
+const AdminPaymentsPage = () => {
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminNotes, setAdminNotes] = useState('');
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = () => {
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    if (!isAdmin) {
+      window.location.href = '/admin';
+      return;
+    }
+    setIsAuthenticated(true);
+    fetchPayments();
+  };
+
+  const fetchPayments = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/payments');
+      const data = await response.json();
+      
+      if (data.success) {
+        setPayments(data.payments);
+      } else {
+        toast.error('Failed to fetch payments');
+      }
+    } catch (error) {
+      toast.error('Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePaymentStatus = async (paymentId: string, status: 'approved' | 'rejected', notes?: string) => {
+    try {
+      const response = await fetch(`/api/admin/payments/${paymentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status, adminNotes: notes }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`Payment ${status} successfully`);
+        fetchPayments();
+        setSelectedPayment(null);
+        setAdminNotes('');
+      } else {
+        toast.error(data.message || 'Failed to update payment');
+      }
+    } catch (error) {
+      toast.error('Network error');
+    }
+  };
+
+  const filteredPayments = payments.filter(payment => {
+    const matchesSearch = payment.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-500';
+      case 'approved': return 'bg-green-500';
+      case 'rejected': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending': return <Clock className="w-4 h-4" />;
+      case 'approved': return <Check className="w-4 h-4" />;
+      case 'rejected': return <X className="w-4 h-4" />;
+      default: return null;
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Payment Management</h1>
+              <p className="text-gray-600 mt-2">Manage and verify cryptocurrency payments</p>
+            </div>
+            <button
+              onClick={fetchPayments}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                }}
+                className="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Payments Table */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading payments...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Payment ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Network
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredPayments.map((payment) => (
+                    <tr key={payment.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {payment.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{payment.fullName}</div>
+                          <div className="text-sm text-gray-500">{payment.email}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${payment.amount} USDT
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {payment.network}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${getStatusColor(payment.status)}`}>
+                          {getStatusIcon(payment.status)}
+                          <span className="ml-1 capitalize">{payment.status}</span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(payment.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => setSelectedPayment(payment)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          {payment.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => updatePaymentStatus(payment.id, 'approved')}
+                                className="text-green-600 hover:text-green-900"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => updatePaymentStatus(payment.id, 'rejected')}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Payment Detail Modal */}
+        {selectedPayment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Payment Details</h2>
+                  <button
+                    onClick={() => setSelectedPayment(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Payment ID</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedPayment.id}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Status</label>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${getStatusColor(selectedPayment.status)}`}>
+                        {getStatusIcon(selectedPayment.status)}
+                        <span className="ml-1 capitalize">{selectedPayment.status}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedPayment.fullName}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Email</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedPayment.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Amount</label>
+                      <p className="mt-1 text-sm text-gray-900">${selectedPayment.amount} USDT</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Network</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedPayment.network}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Transaction Screenshot</label>
+                    <div className="mt-2">
+                      <img
+                        src={selectedPayment.screenshot}
+                        alt="Transaction screenshot"
+                        className="max-w-full h-auto rounded-lg border border-gray-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Admin Notes</label>
+                    <textarea
+                      value={adminNotes}
+                      onChange={(e) => setAdminNotes(e.target.value)}
+                      className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows={3}
+                      placeholder="Add notes about this payment..."
+                    />
+                  </div>
+                </div>
+
+                {selectedPayment.status === 'pending' && (
+                  <div className="flex space-x-4 mt-6">
+                    <button
+                      onClick={() => updatePaymentStatus(selectedPayment.id, 'approved', adminNotes)}
+                      className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-semibold"
+                    >
+                      Approve Payment
+                    </button>
+                    <button
+                      onClick={() => updatePaymentStatus(selectedPayment.id, 'rejected', adminNotes)}
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-semibold"
+                    >
+                      Reject Payment
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AdminPaymentsPage;
