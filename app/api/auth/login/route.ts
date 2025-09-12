@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       }
 
       const user = users[0];
-      console.log('User found:', { user_id: user.user_id, name: user.name, email: user.email });
+      console.log('User found:', { user_id: user.user_id, name: user.name, email: user.email, referral_code: user.referral_code });
 
       // Check password
       console.log('Checking password...');

@@ -30,8 +30,17 @@ export default function LoginForm() {
       const data = await response.json();
 
       if (data.success) {
+        console.log('Login response data:', data.data);
+        console.log('User data being stored:', data.data.user);
+        console.log('Referral code in response:', data.data.user.referral_code);
+        
         localStorage.setItem('authToken', data.data.token);
         localStorage.setItem('userData', JSON.stringify(data.data.user));
+        
+        // Verify what was stored
+        const storedUserData = localStorage.getItem('userData');
+        console.log('Stored user data:', JSON.parse(storedUserData || '{}'));
+        
         router.push('/dashboard');
       } else {
         setError(data.message);

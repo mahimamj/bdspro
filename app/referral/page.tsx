@@ -57,6 +57,7 @@ export default function ReferralPage() {
       if (userData) {
         const user = JSON.parse(userData);
         console.log('User data from localStorage:', user);
+        console.log('Referral code from localStorage:', user.referral_code);
         
         if (user.referral_code) {
           // Use referral code from login response
@@ -75,7 +76,11 @@ export default function ReferralPage() {
           // Still load referral statistics from API
           await loadReferralStats(user.user_id || user.id);
           return;
+        } else {
+          console.log('No referral_code found in localStorage user data');
         }
+      } else {
+        console.log('No userData found in localStorage');
       }
       
       // Fallback: Get user ID and make API call
