@@ -74,16 +74,16 @@ const getUserReferralStats = async (req, res) => {
 
     const [rows] = await pool.execute(
       'SELECT * FROM referral_stats WHERE user_id = ?',
-      [userId]
-    );
-
+            [userId]
+        );
+        
     if (rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+        
     res.json({
       success: true,
       data: rows[0]
@@ -124,20 +124,20 @@ const getUserReferralEarnings = async (req, res) => {
         message: 'User not found'
       });
     }
-
-    res.json({
-      success: true,
+        
+        res.json({
+            success: true,
       data: rows[0]
-    });
+        });
 
-  } catch (error) {
+    } catch (error) {
     console.error('Error getting user referral earnings:', error);
-    res.status(500).json({
-      success: false,
+        res.status(500).json({
+            success: false,
       message: 'Failed to get user referral earnings',
       error: error.message
-    });
-  }
+        });
+    }
 };
 
 /**
@@ -157,20 +157,20 @@ const getReferralDashboard = async (req, res) => {
     // Get referral statistics
     const [statsRows] = await pool.execute(
       'SELECT * FROM referral_stats WHERE user_id = ?',
-      [userId]
-    );
-
+            [userId]
+        );
+        
     // Get referral earnings
     const [earningsRows] = await pool.execute(
       'SELECT * FROM referral_earnings WHERE user_id = ?',
-      [userId]
-    );
-
+            [userId]
+        );
+        
     // Get recent referrals
     const [referralsRows] = await pool.execute(
       'SELECT * FROM user_referrals WHERE referrer = ? ORDER BY referral_joined_date DESC LIMIT 10',
-      [userId]
-    );
+            [userId]
+        );
 
     if (statsRows.length === 0) {
       return res.status(404).json({
@@ -178,10 +178,10 @@ const getReferralDashboard = async (req, res) => {
         message: 'User not found'
       });
     }
-
-    res.json({
-      success: true,
-      data: {
+        
+        res.json({
+            success: true,
+            data: {
         stats: statsRows[0],
         earnings: earningsRows[0] || {
           level1_earnings: 0,
@@ -195,14 +195,14 @@ const getReferralDashboard = async (req, res) => {
       }
     });
 
-  } catch (error) {
+    } catch (error) {
     console.error('Error getting referral dashboard:', error);
-    res.status(500).json({
-      success: false,
+        res.status(500).json({
+            success: false,
       message: 'Failed to get referral dashboard',
       error: error.message
-    });
-  }
+        });
+    }
 };
 
 /**
@@ -271,7 +271,7 @@ const getTopReferrers = async (req, res) => {
       data: rows
     });
 
-  } catch (error) {
+    } catch (error) {
     console.error('Error getting top referrers:', error);
     res.status(500).json({
       success: false,
@@ -315,14 +315,14 @@ const getReferralChain = async (req, res) => {
       data: rows
     });
 
-  } catch (error) {
+    } catch (error) {
     console.error('Error getting referral chain:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get referral chain',
       error: error.message
     });
-  }
+    }
 };
 
 module.exports = {
