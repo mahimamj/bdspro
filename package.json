@@ -23,10 +23,12 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.2",
     "react-hot-toast": "^2.4.1",
+    "socket.io-client": "^4.8.1",
     "yup": "^1.4.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.10.2",
     "@types/nodemailer": "^6.4.15",
     "@types/react": "^18.3.12",
@@ -36,7 +38,6 @@
     "eslint-config-next": "14.2.32",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
-    "typescript": "^5.6.3",
-    "@types/jsonwebtoken": "^9.0.6"
+    "typescript": "^5.6.3"
   }
 }
