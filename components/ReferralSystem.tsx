@@ -69,8 +69,6 @@ export default function ReferralSystem() {
           });
           
           console.log('Using referral code from localStorage:', user.referral_code);
-          // Still try to fetch stats from API
-          await fetchReferralStats();
           return;
         }
       }
