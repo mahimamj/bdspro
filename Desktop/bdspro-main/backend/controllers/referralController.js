@@ -1,226 +1,336 @@
-const db = require('../config/database');
-const { v4: uuidv4 } = require('uuid');
+/**
+ * Referral Controller
+ * Handles all referral-related API endpoints using the new SQL views
+ */
 
-// Generate unique referral code
-const generateReferralCode = () => {
-    const prefix = 'BDS';
-    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `${prefix}${randomPart}`;
+const mysql = require('mysql2/promise');
+
+// Database configuration
+const dbConfig = {
+  host: process.env.RAILWAY_MYSQL_HOST || process.env.MYSQL_HOST || 'localhost',
+  port: process.env.RAILWAY_MYSQL_PORT || process.env.MYSQL_PORT || 3306,
+  user: process.env.RAILWAY_MYSQL_USER || process.env.MYSQL_USER || 'root',
+  password: process.env.RAILWAY_MYSQL_PASSWORD || process.env.MYSQL_PASSWORD || '',
+  database: process.env.RAILWAY_MYSQL_DATABASE || process.env.MYSQL_DATABASE || 'bdspro',
+  ssl: process.env.RAILWAY_MYSQL_SSL === 'true' ? { rejectUnauthorized: false } : false
 };
 
-// Get user's referral link
-const getReferralLink = async (req, res) => {
-    try {
-        const userId = req.user.user_id;
-        
-        // Get user's referral code
-        const [users] = await db.pool.execute(
-            'SELECT referral_code FROM users WHERE user_id = ?',
-            [userId]
-        );
-        
-        if (users.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-        
-        const referralCode = users[0].referral_code;
-        const referralLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`;
-        
-        res.json({
-            success: true,
-            data: {
-                referral_code: referralCode,
-                referral_link: referralLink
-            }
-        });
-    } catch (error) {
-        console.error('Get referral link error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
+// Create connection pool for better performance
+const pool = mysql.createPool({
+  ...dbConfig,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+/**
+ * Get all referrals for a specific user (Level 1 & 2)
+ */
+const getUserReferrals = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid user ID is required'
+      });
     }
+
+    const [rows] = await pool.execute(
+      'SELECT * FROM user_referrals WHERE referrer = ? ORDER BY level, referral_joined_date DESC',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: rows,
+      count: rows.length
+    });
+
+  } catch (error) {
+    console.error('Error getting user referrals:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get user referrals',
+      error: error.message
+    });
+  }
 };
 
-// Get referral statistics
-const getReferralStats = async (req, res) => {
-    try {
-        const userId = req.user.user_id;
-        
-        // Get level 1 referrals (direct referrals)
-        const [level1Referrals] = await db.pool.execute(
-            `SELECT u.user_id, u.name, u.email, u.created_at, 
-                    COALESCE(SUM(i.amount), 0) as total_invested
-             FROM users u
-             LEFT JOIN investments i ON u.user_id = i.user_id
-             WHERE u.referrer_id = ?
-             GROUP BY u.user_id, u.name, u.email, u.created_at
-             ORDER BY u.created_at DESC`,
-            [userId]
-        );
-        
-        // Get level 2 referrals (referrals of referrals)
-        const [level2Referrals] = await db.pool.execute(
-            `SELECT u.user_id, u.name, u.email, u.created_at,
-                    COALESCE(SUM(i.amount), 0) as total_invested
-             FROM users u
-             LEFT JOIN investments i ON u.user_id = i.user_id
-             WHERE u.referrer_id IN (
-                 SELECT user_id FROM users WHERE referrer_id = ?
-             )
-             GROUP BY u.user_id, u.name, u.email, u.created_at
-             ORDER BY u.created_at DESC`,
-            [userId]
-        );
-        
-        // Get total referral earnings
-        const [totalEarnings] = await db.pool.execute(
-            `SELECT 
-                COALESCE(SUM(CASE WHEN type = 'referral_level_1' THEN amount ELSE 0 END), 0) as level1_earnings,
-                COALESCE(SUM(CASE WHEN type = 'referral_level_2' THEN amount ELSE 0 END), 0) as level2_earnings,
-                COALESCE(SUM(amount), 0) as total_earnings
-             FROM earnings 
-             WHERE user_id = ? AND type IN ('referral_level_1', 'referral_level_2')`,
-            [userId]
-        );
-        
-        res.json({
-            success: true,
-            data: {
-                level1_referrals: level1Referrals,
-                level2_referrals: level2Referrals,
-                level1_count: level1Referrals.length,
-                level2_count: level2Referrals.length,
-                total_referrals: level1Referrals.length + level2Referrals.length,
-                earnings: totalEarnings[0]
-            }
-        });
-    } catch (error) {
-        console.error('Get referral stats error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
+/**
+ * Get referral statistics for a specific user
+ */
+const getUserReferralStats = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid user ID is required'
+      });
     }
+
+    const [rows] = await pool.execute(
+      'SELECT * FROM referral_stats WHERE user_id = ?',
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error getting user referral stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get user referral stats',
+      error: error.message
+    });
+  }
 };
 
-// Process referral earnings when someone makes an investment
-const processReferralEarnings = async (userId, investmentAmount, investmentId) => {
-    try {
-        // Get the investor's referrer (Level 1)
-        const [referrer] = await db.pool.execute(
-            'SELECT user_id, referrer_id FROM users WHERE user_id = ?',
-            [userId]
-        );
-        
-        if (referrer.length === 0 || !referrer[0].referrer_id) {
-            return; // No referrer, no earnings to process
-        }
-        
-        const level1ReferrerId = referrer[0].referrer_id;
-        const level1Earning = investmentAmount * 0.01; // 1% for Level 1
-        
-        // Create Level 1 earnings record
-        await db.pool.execute(
-            `INSERT INTO earnings (user_id, source_user_id, amount, type, investment_id, description)
-             VALUES (?, ?, ?, 'referral_level_1', ?, ?)`,
-            [level1ReferrerId, userId, level1Earning, investmentId, `1% referral earning from user ${userId}`]
-        );
-        
-        // Update Level 1 referrer's account balance
-        await db.pool.execute(
-            'UPDATE users SET account_balance = account_balance + ?, total_earning = total_earning + ? WHERE user_id = ?',
-            [level1Earning, level1Earning, level1ReferrerId]
-        );
-        
-        // Get Level 1 referrer's referrer (Level 2)
-        const [level2Referrer] = await db.pool.execute(
-            'SELECT user_id FROM users WHERE user_id = ?',
-            [level1ReferrerId]
-        );
-        
-        if (level2Referrer.length > 0) {
-            const [level2Data] = await db.pool.execute(
-                'SELECT referrer_id FROM users WHERE user_id = ?',
-                [level1ReferrerId]
-            );
-            
-            if (level2Data.length > 0 && level2Data[0].referrer_id) {
-                const level2ReferrerId = level2Data[0].referrer_id;
-                const level2Earning = investmentAmount * 0.01; // 1% for Level 2
-                
-                // Create Level 2 earnings record
-                await db.pool.execute(
-                    `INSERT INTO earnings (user_id, source_user_id, amount, type, investment_id, description)
-                     VALUES (?, ?, ?, 'referral_level_2', ?, ?)`,
-                    [level2ReferrerId, userId, level2Earning, investmentId, `1% referral earning from user ${userId} (Level 2)`]
-                );
-                
-                // Update Level 2 referrer's account balance
-                await db.pool.execute(
-                    'UPDATE users SET account_balance = account_balance + ?, total_earning = total_earning + ? WHERE user_id = ?',
-                    [level2Earning, level2Earning, level2ReferrerId]
-                );
-            }
-        }
-        
-        console.log(`✅ Processed referral earnings for investment ${investmentId}`);
-    } catch (error) {
-        console.error('Error processing referral earnings:', error);
+/**
+ * Get referral earnings for a specific user
+ */
+const getUserReferralEarnings = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid user ID is required'
+      });
     }
+
+    const [rows] = await pool.execute(
+      'SELECT * FROM referral_earnings WHERE user_id = ?',
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error getting user referral earnings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get user referral earnings',
+      error: error.message
+    });
+  }
 };
 
-// Process investment maturity (6% growth after 1 month)
-const processInvestmentMaturity = async (investmentId) => {
-    try {
-        // Get investment details
-        const [investments] = await db.pool.execute(
-            'SELECT user_id, amount FROM investments WHERE investment_id = ? AND status = "active"',
-            [investmentId]
-        );
-        
-        if (investments.length === 0) {
-            return;
-        }
-        
-        const { user_id, amount } = investments[0];
-        const growthAmount = amount * 0.06; // 6% growth
-        
-        // Update investment status and growth amount
-        await db.pool.execute(
-            'UPDATE investments SET status = "matured", growth_amount = ? WHERE investment_id = ?',
-            [growthAmount, investmentId]
-        );
-        
-        // Create self growth earnings record
-        await db.pool.execute(
-            `INSERT INTO earnings (user_id, source_user_id, amount, type, investment_id, description)
-             VALUES (?, ?, ?, 'self_growth', ?, ?)`,
-            [user_id, user_id, growthAmount, investmentId, `6% growth on investment of $${amount}`]
-        );
-        
-        // Update user's account balance
-        await db.pool.execute(
-            'UPDATE users SET account_balance = account_balance + ?, total_earning = total_earning + ? WHERE user_id = ?',
-            [growthAmount, growthAmount, user_id]
-        );
-        
-        // Process referral earnings
-        await processReferralEarnings(user_id, amount, investmentId);
-        
-        console.log(`✅ Processed investment maturity for investment ${investmentId}`);
-    } catch (error) {
-        console.error('Error processing investment maturity:', error);
+/**
+ * Get complete referral dashboard for a user
+ */
+const getReferralDashboard = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid user ID is required'
+      });
     }
+
+    // Get referral statistics
+    const [statsRows] = await pool.execute(
+      'SELECT * FROM referral_stats WHERE user_id = ?',
+      [userId]
+    );
+
+    // Get referral earnings
+    const [earningsRows] = await pool.execute(
+      'SELECT * FROM referral_earnings WHERE user_id = ?',
+      [userId]
+    );
+
+    // Get recent referrals
+    const [referralsRows] = await pool.execute(
+      'SELECT * FROM user_referrals WHERE referrer = ? ORDER BY referral_joined_date DESC LIMIT 10',
+      [userId]
+    );
+
+    if (statsRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        stats: statsRows[0],
+        earnings: earningsRows[0] || {
+          level1_earnings: 0,
+          level2_earnings: 0,
+          total_referral_earnings: 0,
+          level1_business: 0,
+          level2_business: 0,
+          total_business_volume: 0
+        },
+        recent_referrals: referralsRows
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting referral dashboard:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get referral dashboard',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get all referral statistics (admin only)
+ */
+const getAllReferralStats = async (req, res) => {
+  try {
+    const { page = 1, limit = 50, sortBy = 'total_referrals', sortOrder = 'DESC' } = req.query;
+    const offset = (page - 1) * limit;
+
+    const [rows] = await pool.execute(
+      `SELECT * FROM referral_stats 
+       ORDER BY ${sortBy} ${sortOrder.toUpperCase()} 
+       LIMIT ? OFFSET ?`,
+      [parseInt(limit), parseInt(offset)]
+    );
+
+    // Get total count
+    const [countRows] = await pool.execute('SELECT COUNT(*) as total FROM referral_stats');
+    const total = countRows[0].total;
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting all referral stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get referral stats',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get top referrers
+ */
+const getTopReferrers = async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    const [rows] = await pool.execute(
+      `SELECT 
+        referrer, 
+        referrer_name, 
+        COUNT(*) as total_referrals,
+        SUM(CASE WHEN level = 1 THEN 1 ELSE 0 END) as level1_count,
+        SUM(CASE WHEN level = 2 THEN 1 ELSE 0 END) as level2_count
+       FROM user_referrals 
+       GROUP BY referrer, referrer_name 
+       ORDER BY total_referrals DESC 
+       LIMIT ?`,
+      [parseInt(limit)]
+    );
+
+    res.json({
+      success: true,
+      data: rows
+    });
+
+  } catch (error) {
+    console.error('Error getting top referrers:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get top referrers',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get referral chain (who referred whom)
+ */
+const getReferralChain = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid user ID is required'
+      });
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT 
+        u1.user_id as referrer_id,
+        u1.name as referrer_name,
+        u2.user_id as level1_referral_id,
+        u2.name as level1_referral_name,
+        u3.user_id as level2_referral_id,
+        u3.name as level2_referral_name
+       FROM users u1
+       LEFT JOIN users u2 ON u2.referrer_id = u1.user_id
+       LEFT JOIN users u3 ON u3.referrer_id = u2.user_id
+       WHERE u1.user_id = ?`,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: rows
+    });
+
+  } catch (error) {
+    console.error('Error getting referral chain:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get referral chain',
+      error: error.message
+    });
+  }
 };
 
 module.exports = {
-    generateReferralCode,
-    getReferralLink,
-    getReferralStats,
-    processReferralEarnings,
-    processInvestmentMaturity
+  getUserReferrals,
+  getUserReferralStats,
+  getUserReferralEarnings,
+  getReferralDashboard,
+  getAllReferralStats,
+  getTopReferrers,
+  getReferralChain
 };
