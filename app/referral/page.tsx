@@ -58,8 +58,11 @@ export default function ReferralPage() {
         const userData = localStorage.getItem('userData');
         if (userData) {
           const user = JSON.parse(userData);
-          userId = user.user_id || user.id;
-          localStorage.setItem('userId', userId);
+          const extractedUserId = user.user_id || user.id;
+          if (extractedUserId) {
+            userId = extractedUserId;
+            localStorage.setItem('userId', extractedUserId);
+          }
         }
       }
       

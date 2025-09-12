@@ -67,9 +67,12 @@ const SignupFormContent = () => {
         // Store user data (registration doesn't return token)
         if (result.data && result.data.user) {
           localStorage.setItem('userData', JSON.stringify(result.data.user));
-          localStorage.setItem('userId', result.data.user.user_id || result.data.user.id);
+          const userId = result.data.user.user_id || result.data.user.id;
+          if (userId) {
+            localStorage.setItem('userId', userId);
+            console.log('User ID stored:', userId);
+          }
           console.log('User data stored:', result.data.user);
-          console.log('User ID stored:', result.data.user.user_id || result.data.user.id);
         }
         toast.success('Account created successfully!');
         console.log('Redirecting to dashboard...');
