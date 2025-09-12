@@ -54,35 +54,11 @@ export async function GET(request: NextRequest) {
     console.log('User query result:', userResult);
 
     if (userResult.length === 0) {
-      console.log('User not found, creating default user data...');
-      // Create a default response if user not found
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bdspro-fawn.vercel.app';
-      const defaultReferralCode = `BDS${userId.padStart(7, '0')}`;
-      
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: parseInt(userId),
-          name: 'Demo User',
-          email: 'demo@example.com',
-          referralCode: defaultReferralCode,
-          referralLink: `${baseUrl}/signup?ref=${defaultReferralCode}`,
-          referrerName: null
-        },
-        referrals: {
-          level1: [],
-          level2: []
-        },
-        statistics: {
-          level1Count: 0,
-          level2Count: 0,
-          level1Total: '0.00',
-          level2Total: '0.00',
-          level1Commission: '0.00',
-          level2Commission: '0.00',
-          totalCommission: '0.00'
-        }
-      });
+      console.log('User not found, returning error...');
+      return NextResponse.json({ 
+        error: 'User not found',
+        message: 'User with this ID does not exist'
+      }, { status: 404 });
     }
 
     const user = userResult[0];
@@ -205,36 +181,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching user referrals:', error);
     
-    // Return a fallback response instead of 500 error
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bdspro-fawn.vercel.app';
-    const fallbackUserId = '7';
-    const fallbackReferralCode = `BDS${fallbackUserId.padStart(7, '0')}`;
-    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({
-      success: true,
-      user: {
-        id: parseInt(fallbackUserId),
-        name: 'Demo User',
-        email: 'demo@example.com',
-        referralCode: fallbackReferralCode,
-        referralLink: `${baseUrl}/signup?ref=${fallbackReferralCode}`,
-        referrerName: null
-      },
-      referrals: {
-        level1: [],
-        level2: []
-      },
-      statistics: {
-        level1Count: 0,
-        level2Count: 0,
-        level1Total: '0.00',
-        level2Total: '0.00',
-        level1Commission: '0.00',
-        level2Commission: '0.00',
-        totalCommission: '0.00'
-      },
-      error: error instanceof Error ? error.message : 'Unknown error',
-      fallback: true
-    });
+      error: 'Failed to fetch user referrals',
+      message: errorMessage,
+      details: error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 }
