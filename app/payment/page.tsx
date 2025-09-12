@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -18,7 +18,7 @@ import {
   Share2
 } from 'lucide-react';
 
-// Validation schema
+// Validation schema with proper TypeScript types
 const paymentSchema = yup.object({
   fullName: yup.string().required('Full name is required'),
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -28,13 +28,13 @@ const paymentSchema = yup.object({
   network: yup.string().required('Network selection is required'),
   transactionScreenshot: yup.mixed()
     .required('Transaction screenshot is required')
-    .test('fileSize', 'File size must be less than 5MB', (value) => {
-      if (!value) return true;
-      return value[0]?.size <= 5 * 1024 * 1024;
+    .test('fileSize', 'File size must be less than 5MB', (value: FileList | File[] | null) => {
+      if (!value || value.length === 0) return true;
+      return value[0].size <= 5 * 1024 * 1024;
     })
-    .test('fileType', 'Only JPG and PNG files are allowed', (value) => {
-      if (!value) return true;
-      return ['image/jpeg', 'image/png'].includes(value[0]?.type);
+    .test('fileType', 'Only JPG and PNG files are allowed', (value: FileList | File[] | null) => {
+      if (!value || value.length === 0) return true;
+      return ['image/jpeg', 'image/png'].includes(value[0].type);
     })
 });
 
@@ -75,7 +75,7 @@ const PaymentPage = () => {
   useEffect(() => {
     const generateQR = async () => {
       const address = walletAddresses[selectedNetwork];
-      const qrData = `ethereum:${address}?amount=${watch('amount') || 0}&token=USDT`;
+      const qrData = ethereum:?amount=&token=USDT;
       setQrCodeUrl(qrData);
     };
     generateQR();
@@ -155,11 +155,7 @@ const PaymentPage = () => {
                   setSelectedNetwork('TRC20');
                   setValue('network', 'TRC20');
                 }}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  selectedNetwork === 'TRC20'
-                    ? 'bg-green-500 text-white shadow-lg'
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
+                className={px-6 py-3 rounded-lg font-semibold transition-all }
               >
                 TRC20
               </button>
@@ -168,11 +164,7 @@ const PaymentPage = () => {
                   setSelectedNetwork('BEP20');
                   setValue('network', 'BEP20');
                 }}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  selectedNetwork === 'BEP20'
-                    ? 'bg-green-500 text-white shadow-lg'
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
+                className={px-6 py-3 rounded-lg font-semibold transition-all }
               >
                 BEP20
               </button>
