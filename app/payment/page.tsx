@@ -114,7 +114,6 @@ const PaymentPage = () => {
 
       if (response.ok) {
         toast.success('Payment submitted successfully!');
-        // Reset form
         window.location.reload();
       } else {
         toast.error(result.message || 'Payment submission failed');
@@ -129,7 +128,6 @@ const PaymentPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-4">
             Cryptocurrency Payment
@@ -139,16 +137,13 @@ const PaymentPage = () => {
           </p>
         </div>
 
-        {/* Main Content */}
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Left Section - QR Code */}
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
               <QrCode className="mr-3" />
               Payment QR Code
             </h2>
 
-            {/* Network Selection */}
             <div className="flex gap-4 mb-6">
               <button
                 onClick={() => {
@@ -170,7 +165,6 @@ const PaymentPage = () => {
               </button>
             </div>
 
-            {/* QR Code Display */}
             <div className="bg-white rounded-xl p-6 mb-6 shadow-2xl">
               <div className="w-64 h-64 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
                 <QrCode className="w-32 h-32 text-gray-400" />
@@ -178,7 +172,6 @@ const PaymentPage = () => {
               </div>
             </div>
 
-            {/* Address Display */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6">
               <p className="text-white/80 text-sm mb-2">Wallet Address:</p>
               <div className="flex items-center gap-2">
@@ -194,7 +187,6 @@ const PaymentPage = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-4">
               <button className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center">
                 <Download className="w-4 h-4 mr-2" />
@@ -207,7 +199,6 @@ const PaymentPage = () => {
             </div>
           </div>
 
-          {/* Right Section - Payment Form */}
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
               <DollarSign className="mr-3" />
@@ -215,7 +206,6 @@ const PaymentPage = () => {
             </h2>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* Full Name */}
               <div>
                 <label className="block text-white/80 text-sm font-semibold mb-2">
                   Full Name
@@ -230,7 +220,6 @@ const PaymentPage = () => {
                 )}
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-white/80 text-sm font-semibold mb-2">
                   Email Address
@@ -246,7 +235,6 @@ const PaymentPage = () => {
                 )}
               </div>
 
-              {/* Amount */}
               <div>
                 <label className="block text-white/80 text-sm font-semibold mb-2">
                   Amount USDT
@@ -264,7 +252,6 @@ const PaymentPage = () => {
                 )}
               </div>
 
-              {/* Network */}
               <div>
                 <label className="block text-white/80 text-sm font-semibold mb-2">
                   Network
@@ -278,7 +265,6 @@ const PaymentPage = () => {
                 </select>
               </div>
 
-              {/* Transaction Screenshot */}
               <div>
                 <label className="block text-white/80 text-sm font-semibold mb-2">
                   Transaction Screenshot
@@ -310,7 +296,6 @@ const PaymentPage = () => {
                 )}
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -330,7 +315,6 @@ const PaymentPage = () => {
               </button>
             </form>
 
-            {/* Info Section */}
             <div className="mt-8 bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <Shield className="w-5 h-5 text-yellow-400 mt-0.5" />
