@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { CheckCircle, Clock, XCircle, RefreshCw } from 'lucide-react';
@@ -17,7 +17,7 @@ interface Payment {
   createdAt: string;
 }
 
-export default function PaymentStatusPage() {
+function PaymentStatusContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get('id');
   
@@ -248,5 +248,20 @@ export default function PaymentStatusPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentStatusPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 text-white animate-spin mx-auto mb-4" />
+          <div className="text-white text-xl">Loading payment details...</div>
+        </div>
+      </div>
+    }>
+      <PaymentStatusContent />
+    </Suspense>
   );
 }
