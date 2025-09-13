@@ -44,7 +44,7 @@ export default function AdminTransactionProofsPage() {
       console.log('=== FETCHING TRANSACTION PROOFS ===');
       setLoading(true);
       // Add cache-busting parameter
-      const response = await fetch(`/api/admin/transaction-proofs?t=${Date.now()}`);
+      const response = await fetch(`/api/admin/transaction-proofs/?t=${Date.now()}`);
       console.log('Response status:', response.status);
       const data = await response.json();
       console.log('Response data:', data);
@@ -71,7 +71,7 @@ export default function AdminTransactionProofsPage() {
       console.log('Transaction ID:', transactionId);
       console.log('New Status:', status);
       
-      const response = await fetch('/api/admin/transaction-proofs', {
+      const response = await fetch('/api/admin/transaction-proofs/', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
