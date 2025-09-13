@@ -33,16 +33,33 @@ export default function AdminTransactionProofsPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'verified' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionProof | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [autoRefreshing, setAutoRefreshing] = useState(false);
+  const [previousCount, setPreviousCount] = useState(0);
 
   useEffect(() => {
     console.log('=== COMPONENT MOUNTED - FETCHING DATA ===');
     fetchTransactionProofs();
+    
+    // Set up automatic refresh every 30 seconds
+    const interval = setInterval(() => {
+      console.log('=== AUTO REFRESH - FETCHING DATA ===');
+      fetchTransactionProofs(true);
+    }, 30000); // 30 seconds
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchTransactionProofs = async () => {
+  const fetchTransactionProofs = async (isAutoRefresh = false) => {
     try {
       console.log('=== FETCHING TRANSACTION PROOFS ===');
+      if (isAutoRefresh) {
+        setAutoRefreshing(true);
+      } else {
       setLoading(true);
+      }
+      
       // Add cache-busting parameter
       const response = await fetch(`/api/admin/transaction-proofs/?t=${Date.now()}`);
       console.log('Response status:', response.status);
@@ -50,18 +67,43 @@ export default function AdminTransactionProofsPage() {
       console.log('Response data:', data);
       
       if (data.success) {
+        const newCount = data.transactions?.length || 0;
+        const oldCount = transactions.length;
+        
         console.log('Setting transactions:', data.transactions);
         setTransactions(data.transactions);
-        console.log('Transactions state updated, count:', data.transactions?.length || 0);
+        setLastUpdated(new Date());
+        console.log('Transactions state updated, count:', newCount);
+        
+        // Check for new transactions during auto-refresh
+        if (isAutoRefresh && newCount > previousCount && previousCount > 0) {
+          const newTransactions = newCount - previousCount;
+          toast.success(`${newTransactions} new transaction${newTransactions > 1 ? 's' : ''} detected!`);
+          console.log(`New transactions detected: ${newTransactions}`);
+        }
+        
+        setPreviousCount(newCount);
+        
+        if (isAutoRefresh) {
+          console.log('Auto-refresh completed successfully');
+        }
       } else {
         console.error('Failed to fetch transaction proofs:', data);
+        if (!isAutoRefresh) {
         toast.error('Failed to fetch transaction proofs');
+        }
       }
     } catch (error) {
       console.error('Error fetching transaction proofs:', error);
+      if (!isAutoRefresh) {
       toast.error('Failed to fetch transaction proofs');
+      }
     } finally {
+      if (isAutoRefresh) {
+        setAutoRefreshing(false);
+      } else {
       setLoading(false);
+      }
     }
   };
 
@@ -91,7 +133,7 @@ export default function AdminTransactionProofsPage() {
         toast.error(`HTTP Error: ${response.status} - ${response.statusText}`);
         return;
       }
-      
+
       const data = await response.json();
       console.log('Response data:', data);
       
@@ -171,8 +213,10 @@ export default function AdminTransactionProofsPage() {
           <p className="text-sm font-medium text-yellow-800">Debug Info:</p>
           <p className="text-xs text-yellow-700">Transactions count: {transactions.length}</p>
           <p className="text-xs text-yellow-700">Loading: {loading ? 'YES' : 'NO'}</p>
+          <p className="text-xs text-yellow-700">Auto-refreshing: {autoRefreshing ? 'YES' : 'NO'}</p>
           <p className="text-xs text-yellow-700">Filter: {filter}</p>
           <p className="text-xs text-yellow-700">Search term: {searchTerm}</p>
+          <p className="text-xs text-yellow-700">Last updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'}</p>
         </div>
 
         {/* Header */}
@@ -219,10 +263,13 @@ export default function AdminTransactionProofsPage() {
                 console.log('=== MANUAL REFRESH CLICKED ===');
                 fetchTransactionProofs();
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+                autoRefreshing ? 'opacity-75' : ''
+              }`}
+              disabled={autoRefreshing}
             >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
+              <RefreshCw className={`h-4 w-4 ${autoRefreshing ? 'animate-spin' : ''}`} />
+              {autoRefreshing ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
         </div>
