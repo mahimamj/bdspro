@@ -11,7 +11,6 @@
   "dependencies": {
     "@vercel/blob": "^1.1.1",
     "bcryptjs": "^2.4.3",
-    "firebase": "^10.14.1",
     "formik": "^2.4.5",
     "framer-motion": "^11.11.17",
     "jsonwebtoken": "^9.0.2",

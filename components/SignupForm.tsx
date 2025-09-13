@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Mail, Lock, User, Chrome, Check } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+// Firebase auth removed - using custom auth instead
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -21,7 +21,7 @@ const SignupFormContent = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  // Google sign-in handled by custom auth
   const router = useRouter();
   const searchParams = useSearchParams();
 
