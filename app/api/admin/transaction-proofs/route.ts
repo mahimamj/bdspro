@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get all image proofs with user details
+    console.log('=== FETCHING TRANSACTION PROOFS FROM DATABASE ===');
     const [transactions] = await db.execute(`
       SELECT 
         i.id,
@@ -41,6 +42,9 @@ export async function GET(request: NextRequest) {
       LEFT JOIN users u2 ON i.referrer_id = u2.user_id
       ORDER BY i.created_at DESC
     `) as any;
+
+    console.log('Database query result:', transactions);
+    console.log('Number of transactions found:', transactions?.length || 0);
 
     return NextResponse.json({ 
       success: true, 

@@ -129,6 +129,15 @@ export default function AdminTransactionProofsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
+        {/* Debug Info */}
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+          <p className="text-sm font-medium text-yellow-800">Debug Info:</p>
+          <p className="text-xs text-yellow-700">Transactions count: {transactions.length}</p>
+          <p className="text-xs text-yellow-700">Loading: {loading ? 'YES' : 'NO'}</p>
+          <p className="text-xs text-yellow-700">Filter: {filter}</p>
+          <p className="text-xs text-yellow-700">Search term: {searchTerm}</p>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Transaction Proofs</h1>

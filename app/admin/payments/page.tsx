@@ -418,10 +418,10 @@ const AdminPaymentsPage = () => {
                     <div className="mt-2">
                       {selectedPayment.imageUrl ? (
                         <div className="relative">
-                          <img
+                      <img
                             src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
-                            alt="Transaction screenshot"
-                            className="max-w-full h-auto rounded-lg border border-gray-300"
+                        alt="Transaction screenshot"
+                        className="max-w-full h-auto rounded-lg border border-gray-300"
                             style={{ maxHeight: '400px', objectFit: 'contain' }}
                             onError={(e) => {
                               console.error('Image load error for payment:', selectedPayment.id);
