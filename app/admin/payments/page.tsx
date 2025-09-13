@@ -18,12 +18,15 @@ import toast from 'react-hot-toast';
 
 interface Payment {
   id: string;
+  userId: string;
+  referrerId: string;
   fullName: string;
   email: string;
   amount: number;
-  network: string;
-  screenshot: string;
-  status: 'pending' | 'approved' | 'rejected';
+  imageUrl: string;
+  transactionHash: string;
+  hashPassword: string;
+  status: 'pending' | 'verified' | 'rejected';
   createdAt: string;
   updatedAt: string;
   adminNotes?: string;
@@ -60,6 +63,7 @@ const AdminPaymentsPage = () => {
       
       if (data.success) {
         setPayments(data.payments);
+        console.log('Fetched payments:', data.payments);
       } else {
         toast.error('Failed to fetch payments');
       }
@@ -83,7 +87,11 @@ const AdminPaymentsPage = () => {
       const data = await response.json();
       
       if (data.success) {
-        toast.success(`Payment ${status} successfully`);
+        if (status === 'verified') {
+          toast.success(`Payment verified and $${selectedPayment?.amount} credited to user account!`);
+        } else {
+          toast.success(`Payment ${status} successfully`);
+        }
         fetchPayments();
         setSelectedPayment(null);
         setAdminNotes('');
@@ -218,7 +226,7 @@ const AdminPaymentsPage = () => {
                       Amount
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Network
+                      Transaction Hash
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -247,7 +255,7 @@ const AdminPaymentsPage = () => {
                         ${payment.amount} USDT
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {payment.network}
+                        <span className="font-mono text-xs">{payment.transactionHash.substring(0, 10)}...</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${getStatusColor(payment.status)}`}>
@@ -339,19 +347,34 @@ const AdminPaymentsPage = () => {
                       <p className="mt-1 text-sm text-gray-900">${selectedPayment.amount} USDT</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Network</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedPayment.network}</p>
+                      <label className="block text-sm font-medium text-gray-700">Transaction Hash</label>
+                      <p className="mt-1 text-sm text-gray-900 font-mono">{selectedPayment.transactionHash}</p>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">User ID</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedPayment.userId}</p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Transaction Screenshot</label>
                     <div className="mt-2">
-                      <img
-                        src={selectedPayment.screenshot}
-                        alt="Transaction screenshot"
-                        className="max-w-full h-auto rounded-lg border border-gray-300"
-                      />
+                      {selectedPayment.imageUrl ? (
+                        <img
+                          src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
+                          alt="Transaction screenshot"
+                          className="max-w-full h-auto rounded-lg border border-gray-300"
+                          onError={(e) => {
+                            console.error('Image load error:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="p-4 text-center text-gray-500 border border-gray-300 rounded-lg">
+                          No image available
+                        </div>
+                      )}
                     </div>
                   </div>
 

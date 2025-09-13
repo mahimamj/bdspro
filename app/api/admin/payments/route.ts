@@ -70,6 +70,21 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Get payment details first
+    const [paymentRows] = await db.execute(
+      'SELECT referred_id, amount, email FROM images WHERE id = ?',
+      [id]
+    ) as any;
+
+    if (paymentRows.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Payment record not found' },
+        { status: 404 }
+      );
+    }
+
+    const payment = paymentRows[0];
+
     // Update payment status
     const [result] = await db.execute(
       'UPDATE images SET status = ?, updated_at = NOW() WHERE id = ?',
@@ -83,13 +98,46 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // If payment is verified, credit the amount to user's account
+    if (status === 'verified' && payment.referred_id) {
+      try {
+        // Update user's account balance
+        await db.execute(
+          'UPDATE users SET account_balance = account_balance + ? WHERE user_id = ?',
+          [payment.amount, payment.referred_id]
+        );
+
+        // Create a transaction record
+        await db.execute(
+          'INSERT INTO transactions (user_id, type, amount, description, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+          [
+            payment.referred_id,
+            'deposit',
+            payment.amount,
+            `Deposit from payment verification - Payment ID: ${id}`,
+            'completed'
+          ]
+        );
+
+        console.log('Deposit credited successfully:', {
+          userId: payment.referred_id,
+          amount: payment.amount,
+          paymentId: id
+        });
+      } catch (creditError) {
+        console.error('Error crediting deposit:', creditError);
+        // Don't fail the payment update if crediting fails
+      }
+    }
+
     console.log('Payment status updated successfully:', { id, status });
 
     return NextResponse.json({
       success: true,
       message: 'Payment status updated successfully',
       paymentId: id,
-      newStatus: status
+      newStatus: status,
+      depositCredited: status === 'verified'
     });
 
   } catch (error) {
