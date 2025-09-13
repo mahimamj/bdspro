@@ -127,22 +127,31 @@ export async function PUT(request: NextRequest) {
       try {
         console.log('Crediting deposit for user:', payment.referred_id, 'amount:', payment.amount);
         
-        // Update user's account balance
+        // Update user's account balance and total earnings
         await db.execute(
-          'UPDATE users SET account_balance = account_balance + ? WHERE user_id = ?',
-          [payment.amount, payment.referred_id]
+          'UPDATE users SET account_balance = account_balance + ?, total_earning = total_earning + ? WHERE user_id = ?',
+          [payment.amount, payment.amount, payment.referred_id]
         );
+
+        // Get updated user balance for transaction record
+        const [userRows] = await db.execute(
+          'SELECT account_balance FROM users WHERE user_id = ?',
+          [payment.referred_id]
+        ) as any;
+        
+        const currentBalance = userRows[0]?.account_balance || 0;
 
         // Create a transaction record (using correct column names)
         try {
           await db.execute(
-            'INSERT INTO transactions (user_id, type, amount, description, status, timestamp) VALUES (?, ?, ?, ?, ?, NOW())',
+            'INSERT INTO transactions (user_id, type, amount, description, status, balance, timestamp) VALUES (?, ?, ?, ?, ?, ?, NOW())',
             [
               payment.referred_id,
               'deposit',
               payment.amount,
               `Deposit from payment verification - Payment ID: ${id}`,
-              'completed'
+              'completed',
+              currentBalance
             ]
           );
           console.log('Transaction record created successfully');

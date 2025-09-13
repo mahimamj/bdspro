@@ -18,7 +18,17 @@ export default function DashboardPage() {
   
   // Data fetching hooks - moved to top to follow Rules of Hooks
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [rows, setRows] = useState<Array<{ date: string; withdrawal_amount: number; transaction_id: string; withdrawal_from: string }>>([]);
+  const [transactions, setTransactions] = useState<Array<{ 
+    id: number; 
+    date: string; 
+    name: string; 
+    detail: string; 
+    credit: number; 
+    debit: number; 
+    balance: number;
+    type: string;
+    status: string;
+  }>>([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fromFilter, setFromFilter] = useState<string>('');
@@ -28,6 +38,27 @@ export default function DashboardPage() {
   // User data state
   const [userData, setUserData] = useState<any>(null);
   const [userLoading, setUserLoading] = useState(true);
+
+  // Fetch transactions function
+  const fetchTransactions = async (userId: string) => {
+    try {
+      setDataLoading(true);
+      const response = await fetch(`/api/transactions?userId=${userId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setTransactions(data.transactions);
+        setError(null);
+      } else {
+        setError(data.message || 'Failed to fetch transactions');
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      setError('Network error while fetching transactions');
+    } finally {
+      setDataLoading(false);
+    }
+  };
 
   // Check authentication on component mount
   useEffect(() => {
@@ -119,54 +150,24 @@ export default function DashboardPage() {
     checkAuth();
   }, [router]);
 
-  // Data fetching useEffect - moved to top to follow Rules of Hooks
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!selectedCategory) return;
-      if (selectedCategory.toLowerCase() === 'rewards') return; // excluded
-      try {
-        setDataLoading(true);
-        setError(null);
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const qs = new URLSearchParams({ category: selectedCategory.replace(/\s+/g, '_').toLowerCase() });
-        if (fromFilter) qs.set('withdrawal_from', fromFilter);
-        if (startDate) qs.set('start', startDate);
-        if (endDate) qs.set('end', endDate);
-        const token = localStorage.getItem('authToken');
-        console.log('=== TRANSACTIONS API CALL ===');
-        console.log('Token for transactions:', token ? `${token.substring(0, 20)}...` : 'MISSING');
-        console.log('API URL:', `/api/transactions/by-category?${qs.toString()}`);
-        
-        const res = await fetch(`/api/transactions/by-category?${qs.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        console.log('Transactions API response status:', res.status);
-        const text = await res.text();
-        let json: any;
-        try {
-          json = JSON.parse(text);
-        } catch (e) {
-          throw new Error(`Unexpected response from server (${res.status}). Check API URL.`);
-        }
-        if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load');
-        setRows(json.data || []);
-        
-        // If no data, show a helpful message
-        if (json.data && json.data.length === 0) {
-          console.log('No transactions found for this category');
-        }
-      } catch (e: any) {
-        setError(e.message || 'Failed to load');
-      } finally {
-        setDataLoading(false);
-      }
-    };
-    fetchData();
-  }, [selectedCategory, fromFilter, startDate, endDate]);
+  // Filter transactions based on selected category and filters
+  const filteredTransactions = transactions.filter(transaction => {
+    if (!selectedCategory) return true;
+    
+    // Filter by category
+    const categoryMatch = selectedCategory.toLowerCase().includes(transaction.type.toLowerCase()) ||
+                         selectedCategory.toLowerCase().includes(transaction.name.toLowerCase());
+    
+    // Filter by withdrawal from (if applicable)
+    const fromMatch = !fromFilter || transaction.name.toLowerCase().includes(fromFilter.toLowerCase());
+    
+    // Filter by date range
+    const transactionDate = new Date(transaction.date);
+    const startMatch = !startDate || transactionDate >= new Date(startDate);
+    const endMatch = !endDate || transactionDate <= new Date(endDate);
+    
+    return categoryMatch && fromMatch && startMatch && endMatch;
+  });
 
   // Fetch user data from backend
   useEffect(() => {
@@ -205,6 +206,11 @@ export default function DashboardPage() {
           console.log('User data received:', data);
           setUserData(data.data);
           setError(null);
+          
+          // Fetch transactions for this user
+          if (data.data && data.data.user_id) {
+            await fetchTransactions(data.data.user_id);
+          }
         } else {
           const errorText = await response.text();
           console.error('Failed to fetch user data:', response.status, errorText);
@@ -463,26 +469,45 @@ export default function DashboardPage() {
                 <p className="text-gray-600">Loading…</p>
               ) : error ? (
                 <p className="text-red-600">{error}</p>
-              ) : rows.length === 0 ? (
+              ) : filteredTransactions.length === 0 ? (
                 <p className="text-gray-600">No transactions found.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Amount (USDT)</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Transaction ID</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">From</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Detail</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Credit</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Debit</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Balance</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {rows.map((r, i) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-800">{new Date(r.date).toLocaleString()}</td>
-                          <td className="px-4 py-2 text-sm font-semibold text-gray-900">{Number(r.withdrawal_amount).toFixed(2)}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{r.transaction_id}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{r.withdrawal_from}</td>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredTransactions.map((transaction) => (
+                        <tr key={transaction.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-800">
+                            {new Date(transaction.date).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-800">{transaction.name}</td>
+                          <td className="px-4 py-3 text-sm text-gray-800">{transaction.detail}</td>
+                          <td className="px-4 py-3 text-sm text-green-600 font-medium">
+                            {transaction.credit > 0 ? `+${transaction.credit.toFixed(2)}` : '0.00'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-red-600 font-medium">
+                            {transaction.debit > 0 ? `-${transaction.debit.toFixed(2)}` : '0.00'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-semibold">
+                            {transaction.balance.toFixed(2)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
