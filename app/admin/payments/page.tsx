@@ -90,7 +90,7 @@ const AdminPaymentsPage = () => {
         if (status === 'verified') {
           toast.success(`Payment verified and $${selectedPayment?.amount} credited to user account!`);
         } else {
-          toast.success(`Payment ${status} successfully`);
+        toast.success(`Payment ${status} successfully`);
         }
         fetchPayments();
         setSelectedPayment(null);
@@ -368,8 +368,8 @@ const AdminPaymentsPage = () => {
                           <div className="relative">
                             <img
                               src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
-                              alt="Transaction screenshot"
-                              className="max-w-full h-auto rounded-lg border border-gray-300"
+                        alt="Transaction screenshot"
+                        className="max-w-full h-auto rounded-lg border border-gray-300"
                               onError={(e) => {
                                 console.error('Image load error:', e);
                                 console.error('Image URL preview:', selectedPayment.imageUrl.substring(0, 100) + '...');
