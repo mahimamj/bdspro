@@ -7,7 +7,7 @@ import Link from 'next/link';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<{name?: string; email?: string; displayName?: string} | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -90,7 +90,7 @@ const Navbar = () => {
                   className="flex items-center space-x-2 bg-primary-50 text-primary-700 px-3 py-2 rounded-lg"
                 >
                   <User className="w-4 h-4" />
-                  <span className="text-sm font-medium">{user.displayName || user.email}</span>
+                  <span className="text-sm font-medium">{user.name || user.email}</span>
                 </motion.div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -164,7 +164,7 @@ const Navbar = () => {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2 text-primary-700">
                       <User className="w-4 h-4" />
-                      <span className="font-medium">{user.displayName || user.email}</span>
+                      <span className="font-medium">{user.name || user.email}</span>
                     </div>
                     <button
                       onClick={() => {
