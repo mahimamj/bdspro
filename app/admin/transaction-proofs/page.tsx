@@ -413,7 +413,8 @@ export default function AdminTransactionProofsPage() {
                           >
                             <Eye className="h-4 w-4" />
                           </button>
-                          {transaction.status === 'pending' && (
+                          {/* Show buttons for pending transactions, or allow status changes for verified/rejected */}
+                          {(transaction.status === 'pending' || transaction.status === 'verified' || transaction.status === 'rejected') && (
                             <>
                               <button
                                 onClick={async () => {
@@ -427,7 +428,11 @@ export default function AdminTransactionProofsPage() {
                                     console.error('Error in accept button:', error);
                                   }
                                 }}
-                                className="text-green-600 hover:text-green-900 p-1 border border-green-300 rounded hover:bg-green-50"
+                                className={`p-1 border rounded hover:bg-green-50 ${
+                                  transaction.status === 'verified' 
+                                    ? 'text-green-800 bg-green-100 border-green-400' 
+                                    : 'text-green-600 hover:text-green-900 border-green-300'
+                                }`}
                                 title="Accept Transaction"
                               >
                                 <CheckCircle className="h-4 w-4" />
@@ -444,7 +449,11 @@ export default function AdminTransactionProofsPage() {
                                     console.error('Error in reject button:', error);
                                   }
                                 }}
-                                className="text-red-600 hover:text-red-900 p-1 border border-red-300 rounded hover:bg-red-50"
+                                className={`p-1 border rounded hover:bg-red-50 ${
+                                  transaction.status === 'rejected' 
+                                    ? 'text-red-800 bg-red-100 border-red-400' 
+                                    : 'text-red-600 hover:text-red-900 border-red-300'
+                                }`}
                                 title="Reject Transaction"
                               >
                                 <XCircle className="h-4 w-4" />
