@@ -7,6 +7,22 @@ export async function GET(request: NextRequest) {
   try {
     console.log('=== ADMIN PAYMENTS API START ===');
     
+    // Test database connection first
+    try {
+      await db.execute('SELECT 1');
+      console.log('Database connection successful');
+    } catch (dbError) {
+      console.error('Database connection failed:', dbError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Database connection failed',
+          error: dbError instanceof Error ? dbError.message : 'Unknown database error'
+        },
+        { status: 500 }
+      );
+    }
+    
     // Get all payment records from images table
     const [payments] = await db.execute(
       'SELECT id, referred_id, referrer_id, image_url, transaction_hash, amount, status, hash_password, full_name, email, created_at, updated_at FROM images ORDER BY created_at DESC'
@@ -109,23 +125,31 @@ export async function PUT(request: NextRequest) {
     // If payment is verified, credit the amount to user's account
     if (status === 'verified' && payment.referred_id) {
       try {
+        console.log('Crediting deposit for user:', payment.referred_id, 'amount:', payment.amount);
+        
         // Update user's account balance
         await db.execute(
           'UPDATE users SET account_balance = account_balance + ? WHERE user_id = ?',
           [payment.amount, payment.referred_id]
         );
 
-        // Create a transaction record
-        await db.execute(
-          'INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, ?, ?, ?, ?)',
-          [
-            payment.referred_id,
-            'deposit',
-            payment.amount,
-            `Deposit from payment verification - Payment ID: ${id}`,
-            'completed'
-          ]
-        );
+        // Create a transaction record (check if transactions table exists and has correct columns)
+        try {
+          await db.execute(
+            'INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, ?, ?, ?, ?)',
+            [
+              payment.referred_id,
+              'deposit',
+              payment.amount,
+              `Deposit from payment verification - Payment ID: ${id}`,
+              'completed'
+            ]
+          );
+          console.log('Transaction record created successfully');
+        } catch (transactionError) {
+          console.error('Error creating transaction record:', transactionError);
+          // Continue even if transaction record creation fails
+        }
 
         console.log('Deposit credited successfully:', {
           userId: payment.referred_id,

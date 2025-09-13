@@ -365,19 +365,36 @@ const AdminPaymentsPage = () => {
                           <p className="text-xs text-gray-500 mb-2">
                             Image URL length: {selectedPayment.imageUrl.length} characters
                           </p>
-                          <img
-                            src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
-                            alt="Transaction screenshot"
-                            className="max-w-full h-auto rounded-lg border border-gray-300"
-                            onError={(e) => {
-                              console.error('Image load error:', e);
-                              console.error('Image URL:', selectedPayment.imageUrl.substring(0, 100) + '...');
-                              e.currentTarget.style.display = 'none';
-                            }}
-                            onLoad={() => {
-                              console.log('Image loaded successfully');
-                            }}
-                          />
+                          <div className="relative">
+                            <img
+                              src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
+                              alt="Transaction screenshot"
+                              className="max-w-full h-auto rounded-lg border border-gray-300"
+                              onError={(e) => {
+                                console.error('Image load error:', e);
+                                console.error('Image URL preview:', selectedPayment.imageUrl.substring(0, 100) + '...');
+                                console.error('Image URL starts with data:', selectedPayment.imageUrl.startsWith('data:'));
+                                
+                                // Try alternative formats
+                                const img = e.currentTarget;
+                                if (!selectedPayment.imageUrl.startsWith('data:')) {
+                                  img.src = `data:image/jpeg;base64,${selectedPayment.imageUrl}`;
+                                } else {
+                                  img.style.display = 'none';
+                                  img.parentElement!.innerHTML = `
+                                    <div class="p-4 text-center text-red-500 border border-red-300 rounded-lg">
+                                      <p>Failed to load image</p>
+                                      <p class="text-xs mt-2">URL length: ${selectedPayment.imageUrl.length}</p>
+                                      <p class="text-xs">Preview: ${selectedPayment.imageUrl.substring(0, 50)}...</p>
+                                    </div>
+                                  `;
+                                }
+                              }}
+                              onLoad={() => {
+                                console.log('Image loaded successfully');
+                              }}
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div className="p-4 text-center text-gray-500 border border-gray-300 rounded-lg">
