@@ -32,6 +32,7 @@ export default function AdminTransactionProofsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'verified' | 'rejected'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionProof | null>(null);
 
   useEffect(() => {
     fetchTransactionProofs();
@@ -282,8 +283,14 @@ export default function AdminTransactionProofsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => window.open(transaction.image_url, '_blank')}
-                            className="text-blue-600 hover:text-blue-900"
+                            onClick={() => {
+                              console.log('=== EYE ICON CLICKED ===');
+                              console.log('Transaction ID:', transaction.id);
+                              console.log('Image URL:', transaction.image_url);
+                              setSelectedTransaction(transaction);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 p-1 border border-blue-300 rounded"
+                            title="View Image"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -312,6 +319,97 @@ export default function AdminTransactionProofsPage() {
             </div>
           )}
         </div>
+
+        {/* Image View Modal */}
+        {selectedTransaction && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Transaction Image</h2>
+                  <button
+                    onClick={() => setSelectedTransaction(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
+                </div>
+                
+                {/* Debug Info */}
+                <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+                  <p className="text-sm font-medium text-yellow-800">Debug Info:</p>
+                  <p className="text-xs text-yellow-700">Transaction ID: {selectedTransaction.id}</p>
+                  <p className="text-xs text-yellow-700">Image URL Length: {selectedTransaction.image_url?.length || 0}</p>
+                  <p className="text-xs text-yellow-700">Image URL Type: {selectedTransaction.image_url?.startsWith('data:') ? 'Base64' : 'File Path'}</p>
+                  <p className="text-xs text-yellow-700">Image Preview: {selectedTransaction.image_url?.substring(0, 50)}...</p>
+                </div>
+
+                {/* Transaction Details */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Transaction ID</label>
+                    <p className="mt-1 text-sm text-gray-900">#{selectedTransaction.id}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Amount</label>
+                    <p className="mt-1 text-sm text-gray-900">${selectedTransaction.amount} USDT</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Status</label>
+                    <p className="mt-1 text-sm text-gray-900 capitalize">{selectedTransaction.status}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Date</label>
+                    <p className="mt-1 text-sm text-gray-900">{new Date(selectedTransaction.created_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                {/* Image Display */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Screenshot</label>
+                  {selectedTransaction.image_url ? (
+                    <div className="relative">
+                      <img
+                        src={selectedTransaction.image_url.startsWith('data:') ? selectedTransaction.image_url : `data:image/png;base64,${selectedTransaction.image_url}`}
+                        alt="Transaction screenshot"
+                        className="max-w-full h-auto rounded-lg border border-gray-300"
+                        style={{ maxHeight: '500px', objectFit: 'contain' }}
+                        onError={(e) => {
+                          console.error('Image load error for transaction:', selectedTransaction.id);
+                          console.error('Image URL length:', selectedTransaction.image_url.length);
+                          console.error('Image URL starts with data:', selectedTransaction.image_url.startsWith('data:'));
+                          
+                          // Show error message
+                          const img = e.currentTarget;
+                          img.style.display = 'none';
+                          const errorDiv = document.createElement('div');
+                          errorDiv.className = 'p-4 text-center text-red-500 border border-red-300 rounded-lg';
+                          errorDiv.innerHTML = `
+                            <p>Failed to load image</p>
+                            <p class="text-xs mt-2">URL length: ${selectedTransaction.image_url.length}</p>
+                            <p class="text-xs">Preview: ${selectedTransaction.image_url.substring(0, 50)}...</p>
+                            <button onclick="this.parentElement.previousElementSibling.style.display='block'; this.parentElement.remove();" 
+                                    class="mt-2 px-3 py-1 bg-red-500 text-white rounded text-xs">
+                              Retry
+                            </button>
+                          `;
+                          img.parentNode?.replaceChild(errorDiv, img);
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully for transaction:', selectedTransaction.id);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-gray-500 border border-gray-300 rounded-lg">
+                      No image available
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
