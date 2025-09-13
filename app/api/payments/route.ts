@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { put } from '@vercel/blob';
 import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -77,45 +75,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    console.log('Uploads directory path:', uploadsDir);
-    
-    try {
-      if (!existsSync(uploadsDir)) {
-        console.log('Creating uploads directory...');
-        await mkdir(uploadsDir, { recursive: true });
-        console.log('Uploads directory created successfully');
-      } else {
-        console.log('Uploads directory already exists');
-      }
-    } catch (dirError) {
-      console.error('Error creating uploads directory:', dirError);
-      return NextResponse.json(
-        { success: false, message: 'Failed to create uploads directory', error: dirError instanceof Error ? dirError.message : 'Directory creation error' },
-        { status: 500 }
-      );
-    }
-
     // Generate unique filename
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop() || 'png';
     const filename = `payment_${timestamp}.${fileExtension}`;
-    const filepath = join(uploadsDir, filename);
-    console.log('File will be saved to:', filepath);
-
-    // Save file
+    
+    // Upload file to Vercel Blob storage
+    let fileUrl: string;
     try {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      await writeFile(filepath, buffer);
-      console.log('File saved successfully');
-    } catch (fileError) {
-      console.error('Error saving file:', fileError);
-      return NextResponse.json(
-        { success: false, message: 'Failed to save file', error: fileError instanceof Error ? fileError.message : 'File save error' },
-        { status: 500 }
-      );
+      
+      console.log('Uploading file to Vercel Blob storage:', {
+        filename,
+        size: buffer.length,
+        type: file.type
+      });
+      
+      const blob = await put(filename, buffer, {
+        access: 'public',
+        contentType: file.type,
+      });
+      
+      fileUrl = blob.url;
+      console.log('File uploaded successfully to:', fileUrl);
+    } catch (blobError) {
+      console.error('Error uploading to Vercel Blob:', blobError);
+      
+      // Fallback to base64 storage if Vercel Blob fails
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const base64Data = buffer.toString('base64');
+      fileUrl = `data:${file.type};base64,${base64Data}`;
+      console.log('Using base64 fallback for file storage');
     }
 
     // Save to database
@@ -163,30 +155,30 @@ export async function POST(request: NextRequest) {
       
       const [result] = await db.execute(
         'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [userId, null, `/uploads/${filename}`, `TXN_${timestamp}`, amount, 'pending']
+        [userId, null, fileUrl, `TXN_${timestamp}`, amount, 'pending']
       ) as any;
       console.log('Successfully inserted into images table with ID:', result.insertId);
 
-      const paymentRecord = {
+    const paymentRecord = {
         id: result.insertId,
-        fullName,
-        email,
-        amount,
-        network,
-        screenshot: `/uploads/${filename}`,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      fullName,
+      email,
+      amount,
+      network,
+      screenshot: fileUrl,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
       console.log('Payment record saved to database:', paymentRecord);
 
-      return NextResponse.json({
-        success: true,
-        message: 'Payment submitted successfully',
+    return NextResponse.json({
+      success: true,
+      message: 'Payment submitted successfully',
         paymentId: result.insertId,
-        data: paymentRecord
-      });
+      data: paymentRecord
+    });
     } catch (dbError) {
       console.error('Database error:', dbError);
       console.error('Database error details:', {

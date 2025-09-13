@@ -568,36 +568,36 @@ export default function MyAccountPage() {
               >
                 BSC BNB Smart Chain (BEP20)
               </button>
-            </div>
+          </div>
 
-            {/* QR Code */}
-            <div className="text-center mb-6">
+          {/* QR Code */}
+          <div className="text-center mb-6">
               <div className="inline-block p-4 bg-white rounded-lg">
-                <img 
-                  src={generateQRCode()} 
-                  alt="QR Code" 
+              <img 
+                src={generateQRCode()} 
+                alt="QR Code" 
                   className="w-64 h-64 mx-auto"
-                />
-              </div>
+              />
             </div>
+          </div>
 
-            {/* Deposit Address */}
-            <div className="mb-6">
+          {/* Deposit Address */}
+          <div className="mb-6">
               <label className="block text-sm font-medium text-white mb-2">
-                {getCurrentNetworkName()} Deposit Address
-              </label>
+              {getCurrentNetworkName()} Deposit Address
+            </label>
               <div className="flex items-center bg-white/20 p-3 rounded-lg">
                 <code className="flex-1 text-sm font-mono text-white break-all">
-                  {getCurrentWalletAddress()}
-                </code>
-                <button
-                  onClick={() => copyToClipboard(getCurrentWalletAddress())}
+                {getCurrentWalletAddress()}
+              </code>
+              <button
+                onClick={() => copyToClipboard(getCurrentWalletAddress())}
                   className="ml-2 p-2 hover:bg-white/20 rounded-lg transition-colors"
-                >
+              >
                   <Copy className="h-4 w-4 text-white" />
-                </button>
-              </div>
+              </button>
             </div>
+          </div>
 
             {/* Action Buttons */}
             <div className="flex gap-3 mb-6">
@@ -615,18 +615,18 @@ export default function MyAccountPage() {
                 <Share2 className="h-4 w-4" />
                 Share Address
               </button>
-            </div>
+          </div>
 
             {/* Payment Details */}
             <div className="space-y-2 text-white">
               <div className="flex justify-between">
                 <span className="text-sm">Minimum Deposit:</span>
                 <span className="text-sm font-semibold">50 USDT</span>
-              </div>
+            </div>
               <div className="flex justify-between">
                 <span className="text-sm">Network Fee:</span>
                 <span className="text-sm font-semibold">~1-5 USDT</span>
-              </div>
+          </div>
             </div>
           </div>
 
@@ -656,16 +656,16 @@ export default function MyAccountPage() {
                 />
                 {formErrors.fullName && (
                   <p className="mt-1 text-sm text-red-300">{formErrors.fullName}</p>
-                )}
-              </div>
+            )}
+          </div>
 
               {/* Email Address */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
                   Email Address *
-                </label>
-                <input
-                  type="email"
+            </label>
+            <input
+              type="email"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -673,22 +673,22 @@ export default function MyAccountPage() {
                       setFormErrors(prev => ({ ...prev, email: '' }));
                     }
                   }}
-                  placeholder="Enter your email address"
+              placeholder="Enter your email address"
                   className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     formErrors.email ? 'border-red-500' : 'border-white/30'
                   }`}
-                />
+            />
                 {formErrors.email && (
                   <p className="mt-1 text-sm text-red-300">{formErrors.email}</p>
                 )}
-              </div>
+          </div>
 
               {/* Amount */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
                   Amount (USDT) *
-                </label>
-                <input
+            </label>
+            <input
                   type="number"
                   value={amount}
                   onChange={(e) => handleAmountChange(e.target.value)}
@@ -707,13 +707,13 @@ export default function MyAccountPage() {
                     </p>
                   </div>
                 )}
-              </div>
+          </div>
 
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
                   Transaction Screenshot *
-                </label>
+            </label>
                 <div className={`border-2 border-dashed rounded-lg p-6 text-center ${
                   formErrors.file ? 'border-red-500' : 'border-white/30'
                 }`}>
@@ -722,13 +722,13 @@ export default function MyAccountPage() {
                       <CheckCircle className="h-8 w-8 text-green-400 mx-auto" />
                       <p className="text-sm text-white font-medium">{fileName}</p>
                       <div className="flex gap-2 justify-center">
-                        <button
+                  <button
                           type="button"
                           onClick={removeFile}
                           className="px-3 py-1 bg-red-500/20 text-red-200 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
-                        >
-                          Remove
-                        </button>
+                  >
+                    Remove
+                  </button>
                         <button
                           type="button"
                           onClick={() => document.getElementById('file-upload')?.click()}
@@ -737,9 +737,9 @@ export default function MyAccountPage() {
                           Change File
                         </button>
                       </div>
-                    </div>
-                  ) : (
-                    <div>
+                </div>
+              ) : (
+                <div>
                       <Upload className="h-8 w-8 text-white/70 mx-auto mb-2" />
                       <p className="text-sm text-white/70 mb-2">
                         Upload a screenshot of your blockchain transaction
@@ -747,15 +747,15 @@ export default function MyAccountPage() {
                       <p className="text-xs text-white/50 mb-4">
                         (JPG/PNG, max 5MB)
                       </p>
-                      <button
+                  <button
                         type="button"
                         onClick={() => document.getElementById('file-upload')?.click()}
                         className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
-                      >
-                        Choose File
-                      </button>
-                    </div>
-                  )}
+                  >
+                    Choose File
+                  </button>
+                </div>
+              )}
                   <input
                     id="file-upload"
                     type="file"
@@ -763,14 +763,14 @@ export default function MyAccountPage() {
                     onChange={handleFileSelect}
                     className="hidden"
                   />
-                </div>
+            </div>
                 {formErrors.file && (
                   <p className="mt-1 text-sm text-red-300">{formErrors.file}</p>
                 )}
-              </div>
+          </div>
 
               {/* Submit Button */}
-              <button
+            <button
                 type="submit"
                 onClick={(e) => {
                   e.preventDefault();
@@ -786,7 +786,7 @@ export default function MyAccountPage() {
                 }`}
               >
                 {isUploading ? 'Submitting...' : 'Submit Payment'}
-              </button>
+            </button>
             </form>
 
             {/* Important Notice */}
@@ -794,8 +794,8 @@ export default function MyAccountPage() {
               <p className="text-sm text-yellow-200">
                 <strong>Important:</strong> Make sure to send the exact amount and use the correct network. Double-check the wallet address before sending your transaction.
               </p>
-            </div>
           </div>
+        </div>
         </div>
 
       </div>

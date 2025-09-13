@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/blob": "^1.1.1",
     "bcryptjs": "^2.4.3",
     "firebase": "^10.14.1",
     "formik": "^2.4.5",
