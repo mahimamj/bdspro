@@ -36,19 +36,33 @@ export default function AdminTransactionProofsPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefreshing, setAutoRefreshing] = useState(false);
   const [previousCount, setPreviousCount] = useState(0);
+  const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
 
   useEffect(() => {
     console.log('=== COMPONENT MOUNTED - FETCHING DATA ===');
     fetchTransactionProofs();
     
-    // Set up automatic refresh every 30 seconds
+    // Set up automatic refresh every 10 seconds for better responsiveness
     const interval = setInterval(() => {
       console.log('=== AUTO REFRESH - FETCHING DATA ===');
+      console.log('Current time:', new Date().toLocaleTimeString());
       fetchTransactionProofs(true);
-    }, 30000); // 30 seconds
+    }, 10000); // 10 seconds
+    
+    // Set next refresh time
+    const nextRefreshTime = new Date();
+    nextRefreshTime.setSeconds(nextRefreshTime.getSeconds() + 10);
+    setNextRefresh(nextRefreshTime);
+    
+    console.log('=== AUTO REFRESH INTERVAL SET UP ===');
+    console.log('Interval ID:', interval);
+    console.log('Next refresh at:', nextRefreshTime.toLocaleTimeString());
     
     // Cleanup interval on component unmount
-    return () => clearInterval(interval);
+    return () => {
+      console.log('=== CLEANING UP AUTO REFRESH INTERVAL ===');
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchTransactionProofs = async (isAutoRefresh = false) => {
@@ -68,11 +82,19 @@ export default function AdminTransactionProofsPage() {
       
       if (data.success) {
         const newCount = data.transactions?.length || 0;
-        const oldCount = transactions.length;
+        const currentCount = transactions.length;
         
         console.log('Setting transactions:', data.transactions);
+        console.log('Current count:', currentCount, 'New count:', newCount, 'Previous count:', previousCount);
+        
         setTransactions(data.transactions);
         setLastUpdated(new Date());
+        
+        // Update next refresh time
+        const nextRefreshTime = new Date();
+        nextRefreshTime.setSeconds(nextRefreshTime.getSeconds() + 10);
+        setNextRefresh(nextRefreshTime);
+        
         console.log('Transactions state updated, count:', newCount);
         
         // Check for new transactions during auto-refresh
@@ -82,6 +104,7 @@ export default function AdminTransactionProofsPage() {
           console.log(`New transactions detected: ${newTransactions}`);
         }
         
+        // Update previous count for next comparison
         setPreviousCount(newCount);
         
         if (isAutoRefresh) {
@@ -211,12 +234,22 @@ export default function AdminTransactionProofsPage() {
         {/* Debug Info */}
         <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
           <p className="text-sm font-medium text-yellow-800">Debug Info:</p>
-          <p className="text-xs text-yellow-700">Transactions count: {transactions.length}</p>
-          <p className="text-xs text-yellow-700">Loading: {loading ? 'YES' : 'NO'}</p>
-          <p className="text-xs text-yellow-700">Auto-refreshing: {autoRefreshing ? 'YES' : 'NO'}</p>
-          <p className="text-xs text-yellow-700">Filter: {filter}</p>
-          <p className="text-xs text-yellow-700">Search term: {searchTerm}</p>
-          <p className="text-xs text-yellow-700">Last updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            <p className="text-yellow-700">Transactions count: {transactions.length}</p>
+            <p className="text-yellow-700">Loading: {loading ? 'YES' : 'NO'}</p>
+            <div className="flex items-center gap-1">
+              <span className="text-yellow-700">Auto-refreshing:</span>
+              <span className={autoRefreshing ? 'text-green-600 font-semibold' : 'text-gray-600'}>
+                {autoRefreshing ? 'YES' : 'NO'}
+              </span>
+              {autoRefreshing && <div className="animate-spin h-3 w-3 border border-yellow-600 border-t-transparent rounded-full"></div>}
+            </div>
+            <p className="text-yellow-700">Filter: {filter}</p>
+            <p className="text-yellow-700">Search term: {searchTerm}</p>
+            <p className="text-yellow-700">Last updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'}</p>
+            <p className="text-yellow-700">Next refresh: {nextRefresh ? nextRefresh.toLocaleTimeString() : 'Not set'}</p>
+            <p className="text-yellow-700">Previous count: {previousCount}</p>
+          </div>
         </div>
 
         {/* Header */}
