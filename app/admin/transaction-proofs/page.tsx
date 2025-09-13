@@ -82,6 +82,15 @@ export default function AdminTransactionProofsPage() {
       });
 
       console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('HTTP Error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        toast.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+        return;
+      }
+      
       const data = await response.json();
       console.log('Response data:', data);
       
@@ -90,7 +99,7 @@ export default function AdminTransactionProofsPage() {
         fetchTransactionProofs(); // Refresh the list
       } else {
         console.error('Update failed:', data);
-        toast.error(data.error || 'Failed to update transaction status');
+        toast.error(data.error || data.message || 'Failed to update transaction status');
       }
     } catch (error) {
       console.error('Error updating transaction status:', error);
