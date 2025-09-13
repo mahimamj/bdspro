@@ -133,10 +133,10 @@ export async function PUT(request: NextRequest) {
           [payment.amount, payment.referred_id]
         );
 
-        // Create a transaction record (check if transactions table exists and has correct columns)
+        // Create a transaction record (using correct column names)
         try {
           await db.execute(
-            'INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO transactions (user_id, type, amount, description, status, timestamp) VALUES (?, ?, ?, ?, ?, NOW())',
             [
               payment.referred_id,
               'deposit',

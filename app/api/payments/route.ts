@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       fileName: imageFile?.name,
       fileSize: imageFile?.size
     });
-    
+
     // Validation
     if (!fullName || !email || !amount || !hashPassword || !network || !imageFile || !walletAddress) {
       return NextResponse.json(
@@ -121,8 +121,8 @@ export async function POST(request: NextRequest) {
       console.error('Error uploading to Vercel Blob:', blobError);
       
       // Fallback to base64 storage if Vercel Blob fails
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
       const base64Data = buffer.toString('base64');
       fileUrl = `data:${file.type};base64,${base64Data}`;
       console.log('Using base64 fallback for file storage');
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       });
       
       const [result] = await db.execute(
-        'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status, hash_password, full_name, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status, hash_password, full_name, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [userId, null, fileUrl, `TXN_${timestamp}`, amount, 'pending', hashedPassword, fullName, email]
       ) as any;
       console.log('Successfully inserted into images table with ID:', result.insertId);
