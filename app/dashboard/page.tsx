@@ -18,6 +18,7 @@ export default function DashboardPage() {
   
   // Data fetching hooks - moved to top to follow Rules of Hooks
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [transactions, setTransactions] = useState<Array<{ 
     id: number; 
     date: string; 
@@ -349,8 +350,11 @@ export default function DashboardPage() {
     </Link>
   );
 
-  const Card = ({ title, value, Icon, onClick }: { title: string; value: string; Icon: React.ComponentType<{ className?: string }>, onClick?: () => void }) => (
-    <button onClick={onClick} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm text-left hover:shadow-md transition">
+  const Card = ({ title, value, Icon, onClick, isAccountBalance = false }: { title: string; value: string; Icon: React.ComponentType<{ className?: string }>, onClick?: () => void, isAccountBalance?: boolean }) => (
+    <button 
+      onClick={onClick} 
+      className={`rounded-2xl border border-gray-200 bg-white p-6 shadow-sm text-left hover:shadow-md transition ${isAccountBalance ? 'cursor-pointer' : ''}`}
+    >
       <div className="flex items-start gap-4">
         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 grid place-items-center">
           <Icon className="h-6 w-6 text-white" />
@@ -359,6 +363,9 @@ export default function DashboardPage() {
           <p className="text-xs font-semibold tracking-wider text-gray-500">{title.toUpperCase()}</p>
           <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
           <p className="mt-1 text-xs font-semibold text-emerald-500">+0.00%</p>
+          {isAccountBalance && (
+            <p className="mt-1 text-xs text-blue-600">Click to view transaction history</p>
+          )}
         </div>
       </div>
     </button>
@@ -409,7 +416,8 @@ export default function DashboardPage() {
                 title={c.title}
                 value={c.value}
                 Icon={c.icon}
-                onClick={() => setSelectedCategory(c.title)}
+                onClick={c.title === 'Account Balance' ? () => setShowTransactionModal(true) : () => setSelectedCategory(c.title)}
+                isAccountBalance={c.title === 'Account Balance'}
               />
             ))}
           </div>
@@ -518,6 +526,141 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      {/* Transaction History Modal */}
+      {showTransactionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Account Balance - Transaction History</h2>
+                <button
+                  onClick={() => setShowTransactionModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {/* Filters */}
+              <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">Transaction Type</label>
+                  <select
+                    value={fromFilter}
+                    onChange={(e) => setFromFilter(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  >
+                    <option value="">All</option>
+                    <option value="deposit">Deposit</option>
+                    <option value="withdrawal">Withdrawal</option>
+                    <option value="cashback">Cashback</option>
+                    <option value="level1_income">Level 1 Income</option>
+                    <option value="level2_income">Level 2 Income</option>
+                    <option value="reward">Reward</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">Date From</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-600">Date To</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => { /* trigger effect by toggling state noop */ setFromFilter((v) => v); }}
+                    className="w-full rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+
+              {/* Transaction Table */}
+              {dataLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading transactions...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <p className="text-red-600">{error}</p>
+                </div>
+              ) : filteredTransactions.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No transactions found.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredTransactions.map((transaction) => (
+                        <tr key={transaction.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-800">
+                            {new Date(transaction.date).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              transaction.type === 'deposit' 
+                                ? 'bg-green-100 text-green-800' 
+                                : transaction.type === 'withdrawal'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {transaction.name}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-800">{transaction.detail}</td>
+                          <td className="px-4 py-3 text-sm">
+                            {transaction.credit > 0 ? (
+                              <span className="text-green-600 font-semibold">+${transaction.credit.toFixed(2)}</span>
+                            ) : transaction.debit > 0 ? (
+                              <span className="text-red-600 font-semibold">-${transaction.debit.toFixed(2)}</span>
+                            ) : (
+                              <span className="text-gray-500">$0.00</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-800 font-semibold">
+                            ${transaction.balance.toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
