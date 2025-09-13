@@ -64,6 +64,14 @@ const AdminPaymentsPage = () => {
       if (data.success) {
         setPayments(data.payments);
         console.log('Fetched payments:', data.payments);
+        // Debug image URLs
+        data.payments.forEach((payment: any) => {
+          console.log(`Payment ${payment.id} image URL:`, {
+            length: payment.imageUrl?.length || 0,
+            startsWithData: payment.imageUrl?.startsWith('data:') || false,
+            preview: payment.imageUrl?.substring(0, 50) || 'No image'
+          });
+        });
       } else {
         toast.error('Failed to fetch payments');
       }
@@ -269,7 +277,11 @@ const AdminPaymentsPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <button
-                            onClick={() => setSelectedPayment(payment)}
+                            onClick={() => {
+                              console.log('Opening payment details for:', payment.id);
+                              console.log('Image URL:', payment.imageUrl?.substring(0, 100) + '...');
+                              setSelectedPayment(payment);
+                            }}
                             className="text-blue-600 hover:text-blue-900"
                           >
                             <Eye className="w-4 h-4" />
@@ -361,40 +373,37 @@ const AdminPaymentsPage = () => {
                     <label className="block text-sm font-medium text-gray-700">Transaction Screenshot</label>
                     <div className="mt-2">
                       {selectedPayment.imageUrl ? (
-                        <div>
-                          <p className="text-xs text-gray-500 mb-2">
-                            Image URL length: {selectedPayment.imageUrl.length} characters
-                          </p>
-                          <div className="relative">
-                            <img
-                              src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
-                        alt="Transaction screenshot"
-                        className="max-w-full h-auto rounded-lg border border-gray-300"
-                              onError={(e) => {
-                                console.error('Image load error:', e);
-                                console.error('Image URL preview:', selectedPayment.imageUrl.substring(0, 100) + '...');
-                                console.error('Image URL starts with data:', selectedPayment.imageUrl.startsWith('data:'));
-                                
-                                // Try alternative formats
-                                const img = e.currentTarget;
-                                if (!selectedPayment.imageUrl.startsWith('data:')) {
-                                  img.src = `data:image/jpeg;base64,${selectedPayment.imageUrl}`;
-                                } else {
-                                  img.style.display = 'none';
-                                  img.parentElement!.innerHTML = `
-                                    <div class="p-4 text-center text-red-500 border border-red-300 rounded-lg">
-                                      <p>Failed to load image</p>
-                                      <p class="text-xs mt-2">URL length: ${selectedPayment.imageUrl.length}</p>
-                                      <p class="text-xs">Preview: ${selectedPayment.imageUrl.substring(0, 50)}...</p>
-                                    </div>
-                                  `;
-                                }
-                              }}
-                              onLoad={() => {
-                                console.log('Image loaded successfully');
-                              }}
-                            />
-                          </div>
+                        <div className="relative">
+                          <img
+                            src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
+                            alt="Transaction screenshot"
+                            className="max-w-full h-auto rounded-lg border border-gray-300"
+                            onError={(e) => {
+                              console.error('Image load error for payment:', selectedPayment.id);
+                              console.error('Image URL length:', selectedPayment.imageUrl.length);
+                              console.error('Image URL starts with data:', selectedPayment.imageUrl.startsWith('data:'));
+                              
+                              // Try alternative format
+                              const img = e.currentTarget;
+                              if (!selectedPayment.imageUrl.startsWith('data:')) {
+                                img.src = `data:image/jpeg;base64,${selectedPayment.imageUrl}`;
+                              } else {
+                                // Show error message
+                                img.style.display = 'none';
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'p-4 text-center text-red-500 border border-red-300 rounded-lg';
+                                errorDiv.innerHTML = `
+                                  <p>Failed to load image</p>
+                                  <p class="text-xs mt-2">URL length: ${selectedPayment.imageUrl.length}</p>
+                                  <p class="text-xs">Preview: ${selectedPayment.imageUrl.substring(0, 50)}...</p>
+                                `;
+                                img.parentNode?.replaceChild(errorDiv, img);
+                              }
+                            }}
+                            onLoad={() => {
+                              console.log('Image loaded successfully for payment:', selectedPayment.id);
+                            }}
+                          />
                         </div>
                       ) : (
                         <div className="p-4 text-center text-gray-500 border border-gray-300 rounded-lg">
