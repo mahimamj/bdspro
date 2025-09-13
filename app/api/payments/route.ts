@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,42 +12,43 @@ export async function POST(request: NextRequest) {
     const email = formData.get('email') as string;
     const amount = parseFloat(formData.get('amount') as string);
     const network = formData.get('network') as string;
-    const file = formData.get('transactionScreenshot') as File;
+    const walletAddress = formData.get('walletAddress') as string;
+    const file = formData.get('image') as File;
 
     // Validation
-    if (!fullName || !email || !amount || !network || !file) {
+    if (!fullName || !email || !amount || !network || !file || !walletAddress) {
       return NextResponse.json(
-        { message: 'All fields are required' },
+        { success: false, message: 'All fields are required' },
         { status: 400 }
       );
     }
 
     if (amount < 50) {
       return NextResponse.json(
-        { message: 'Minimum deposit is 50 USDT' },
+        { success: false, message: 'Minimum deposit is 50 USDT' },
         { status: 400 }
       );
     }
 
-    if (!['TRC20', 'BEP20'].includes(network)) {
+    if (!['trc20', 'bep20'].includes(network)) {
       return NextResponse.json(
-        { message: 'Invalid network selection' },
+        { success: false, message: 'Invalid network selection' },
         { status: 400 }
       );
     }
 
     // File validation
-    const allowedTypes = ['image/jpeg', 'image/png'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { message: 'Only JPG and PNG files are allowed' },
+        { success: false, message: 'Only JPG and PNG files are allowed' },
         { status: 400 }
       );
     }
 
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
-        { message: 'File size must be less than 5MB' },
+        { success: false, message: 'File size must be less than 5MB' },
         { status: 400 }
       );
     }
@@ -68,33 +70,61 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     await writeFile(filepath, buffer);
 
-    // Create payment record (you can integrate with your database here)
-    const paymentRecord = {
-      id: `PAY_${timestamp}`,
-      fullName,
-      email,
-      amount,
-      network,
-      screenshot: `/uploads/${filename}`,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    // Save to database
+    try {
+      // First, check if user exists by email
+      const [users] = await db.execute('SELECT user_id FROM users WHERE email = ?', [email]) as any;
+      let userId = null;
+      
+      if (users.length > 0) {
+        userId = users[0].user_id;
+      } else {
+        // Create a new user if they don't exist
+        const [newUser] = await db.execute(
+          'INSERT INTO users (name, email, password_hash, account_balance, total_earning, rewards, referral_code) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [fullName, email, '', 0, 0, 0, 'BDS_' + Math.random().toString(36).substr(2, 8).toUpperCase()]
+        ) as any;
+        userId = newUser.insertId;
+      }
 
-    // TODO: Save to database
-    console.log('Payment record created:', paymentRecord);
+      // Insert payment record into images table
+      const [result] = await db.execute(
+        'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, null, `/uploads/${filename}`, `TXN_${timestamp}`, amount, 'pending']
+      ) as any;
 
-    return NextResponse.json({
-      success: true,
-      message: 'Payment submitted successfully',
-      paymentId: paymentRecord.id,
-      data: paymentRecord
-    });
+      const paymentRecord = {
+        id: result.insertId,
+        fullName,
+        email,
+        amount,
+        network,
+        screenshot: `/uploads/${filename}`,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      console.log('Payment record saved to database:', paymentRecord);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Payment submitted successfully',
+        paymentId: result.insertId,
+        data: paymentRecord
+      });
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return NextResponse.json(
+        { success: false, message: 'Failed to save payment to database' },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
     console.error('Payment submission error:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { success: false, message: 'Internal server error' },
       { status: 500 }
     );
   }

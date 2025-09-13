@@ -54,6 +54,9 @@ export default function MyAccountPage() {
   const [showAmountWarning, setShowAmountWarning] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>('');
+  const [fullName, setFullName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     loadPaymentMethods();
@@ -98,6 +101,35 @@ export default function MyAccountPage() {
     } else {
       setShowAmountWarning(false);
     }
+    // Clear amount error when user types
+    if (formErrors.amount) {
+      setFormErrors(prev => ({ ...prev, amount: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!fullName.trim()) {
+      errors.fullName = 'Full name is required';
+    }
+    
+    if (!email.trim()) {
+      errors.email = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!amount || parseFloat(amount) < 50) {
+      errors.amount = 'Minimum deposit is 50 USDT';
+    }
+    
+    if (!selectedFile) {
+      errors.file = 'Please upload a transaction screenshot';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,6 +160,190 @@ export default function MyAccountPage() {
     const fileInput = document.getElementById('file-upload') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
+    }
+    // Clear file error when file is removed
+    if (formErrors.file) {
+      setFormErrors(prev => ({ ...prev, file: '' }));
+    }
+  };
+
+  const handleSaveAsImage = async () => {
+    try {
+      // Show loading message
+      toast.loading('Generating QR code image...', { id: 'save-image' });
+      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        toast.error('Unable to generate image - Canvas not supported');
+        return;
+      }
+
+      // Set canvas size
+      canvas.width = 400;
+      canvas.height = 500;
+
+      // Create background
+      ctx.fillStyle = '#1e3a8a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Add title
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('BDS PRO Payment QR Code', canvas.width / 2, 40);
+
+      // Add network info
+      ctx.font = '16px Arial';
+      ctx.fillText(getCurrentNetworkName(), canvas.width / 2, 70);
+
+      // Try to load and draw QR code image
+      try {
+        const qrCodeImg = new Image();
+        qrCodeImg.crossOrigin = 'anonymous';
+        
+        await new Promise((resolve, reject) => {
+          qrCodeImg.onload = () => {
+            console.log('QR code image loaded successfully');
+            resolve(true);
+          };
+          qrCodeImg.onerror = (error) => {
+            console.error('Failed to load QR code image:', error);
+            reject(new Error('Failed to load QR code image'));
+          };
+          
+          qrCodeImg.src = generateQRCode();
+          
+          setTimeout(() => {
+            reject(new Error('QR code image load timeout'));
+          }, 8000);
+        });
+
+        // Draw QR code
+        ctx.drawImage(qrCodeImg, 100, 100, 200, 200);
+      } catch (qrError) {
+        console.warn('QR code image failed to load, using fallback:', qrError);
+        
+        // Fallback: Draw a placeholder QR code area
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(100, 100, 200, 200);
+        ctx.fillStyle = '#000000';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('QR Code', 200, 180);
+        ctx.fillText('(Click to scan)', 200, 200);
+        ctx.fillText('in your wallet app', 200, 220);
+      }
+
+      // Add wallet address
+      ctx.font = '12px monospace';
+      ctx.fillText('Wallet Address:', canvas.width / 2, 320);
+      ctx.fillText(getCurrentWalletAddress(), canvas.width / 2, 340);
+
+      // Add minimum deposit info
+      ctx.font = '14px Arial';
+      ctx.fillText('Minimum Deposit: 50 USDT', canvas.width / 2, 380);
+      ctx.fillText('Network Fee: ~1-5 USDT', canvas.width / 2, 400);
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `bds-pro-payment-qr-${Date.now()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success('QR Code saved as image!', { id: 'save-image' });
+        } else {
+          toast.error('Failed to generate image blob', { id: 'save-image' });
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Error saving image:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save image', { id: 'save-image' });
+    }
+  };
+
+  const handleShareAddress = async () => {
+    try {
+      const shareData = {
+        title: 'BDS PRO Payment Address',
+        text: `Send USDT to this address: ${getCurrentWalletAddress()}`,
+        url: window.location.href
+      };
+
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast.success('Address shared successfully!');
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(
+          `BDS PRO Payment Address\nNetwork: ${getCurrentNetworkName()}\nAddress: ${getCurrentWalletAddress()}\nMinimum Deposit: 50 USDT`
+        );
+        toast.success('Address copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing address:', error);
+      toast.error('Failed to share address');
+    }
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields correctly');
+      return;
+    }
+
+    if (!selectedFile) {
+      toast.error('Please upload a transaction screenshot');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      formData.append('fullName', fullName);
+      formData.append('email', email);
+      formData.append('amount', amount);
+      formData.append('network', selectedNetwork);
+      formData.append('walletAddress', getCurrentWalletAddress());
+
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Payment submitted successfully! Admin will review your transaction.');
+        
+        // Reset form
+        setFullName('');
+        setEmail('');
+        setAmount('');
+        setSelectedFile(null);
+        setFileName('');
+        setFormErrors({});
+        
+        // Reset file input
+        const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      } else {
+        toast.error(data.message || 'Failed to submit payment');
+      }
+    } catch (error) {
+      console.error('Error submitting payment:', error);
+      toast.error('Failed to submit payment');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -224,60 +440,6 @@ export default function MyAccountPage() {
     setTransactionHash('');
   };
 
-  const handleSaveAsImage = async () => {
-    if (!uploadedFile) {
-      toast.error('Please upload a payment proof image first');
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('image', uploadedFile);
-      formData.append('transactionHash', transactionHash || '');
-      formData.append('amount', '50'); // Default amount for now
-      formData.append('referrerId', ''); // Will be fetched from user data
-
-      // Get user email from state or prompt user
-      if (!userEmail) {
-        const email = prompt('Enter your email address:');
-        if (!email) {
-          alert('Email is required to upload payment proof');
-          return;
-        }
-        setUserEmail(email);
-      }
-      
-      formData.append('userEmail', userEmail);
-      
-      const response = await fetch('/api/upload-realtime', {
-        method: 'POST',
-        body: formData,
-      });
-
-        const data = await response.json();
-
-      if (data.success) {
-        setShowSaveModal(true);
-        toast.success('Transaction proof saved successfully!');
-        
-        // Reset form
-        setUploadedFile(null);
-        setUploadedFileName('');
-        setTransactionHash('');
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      } else {
-        toast.error(data.error || 'Failed to save transaction proof');
-      }
-    } catch (error) {
-      console.error('Error saving transaction proof:', error);
-      toast.error('Failed to save transaction proof');
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const closeSaveModal = () => {
     setShowSaveModal(false);
@@ -439,11 +601,17 @@ export default function MyAccountPage() {
 
             {/* Action Buttons */}
             <div className="flex gap-3 mb-6">
-              <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors">
+              <button 
+                onClick={handleSaveAsImage}
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+              >
                 <Save className="h-4 w-4" />
                 Save as Image
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors">
+              <button 
+                onClick={handleShareAddress}
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+              >
                 <Share2 className="h-4 w-4" />
                 Share Address
               </button>
@@ -470,40 +638,69 @@ export default function MyAccountPage() {
               {/* Full Name */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Full Name
+                  Full Name *
                 </label>
                 <input
                   type="text"
+                  value={fullName}
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    if (formErrors.fullName) {
+                      setFormErrors(prev => ({ ...prev, fullName: '' }));
+                    }
+                  }}
                   placeholder="Enter your full name"
-                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    formErrors.fullName ? 'border-red-500' : 'border-white/30'
+                  }`}
                 />
+                {formErrors.fullName && (
+                  <p className="mt-1 text-sm text-red-300">{formErrors.fullName}</p>
+                )}
               </div>
 
               {/* Email Address */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Email Address
+                  Email Address *
                 </label>
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (formErrors.email) {
+                      setFormErrors(prev => ({ ...prev, email: '' }));
+                    }
+                  }}
                   placeholder="Enter your email address"
-                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    formErrors.email ? 'border-red-500' : 'border-white/30'
+                  }`}
                 />
+                {formErrors.email && (
+                  <p className="mt-1 text-sm text-red-300">{formErrors.email}</p>
+                )}
               </div>
 
               {/* Amount */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Amount (USDT)
+                  Amount (USDT) *
                 </label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => handleAmountChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    formErrors.amount ? 'border-red-500' : 'border-white/30'
+                  }`}
                 />
-                {showAmountWarning && (
+                {formErrors.amount && (
+                  <p className="mt-1 text-sm text-red-300">{formErrors.amount}</p>
+                )}
+                {showAmountWarning && !formErrors.amount && (
                   <div className="mt-2 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
                     <p className="text-sm text-red-200">
                       <strong>Warning:</strong> Minimum deposit is 50 USDT. Amounts below 50 USDT will not be processed.
@@ -512,23 +709,14 @@ export default function MyAccountPage() {
                 )}
               </div>
 
-              {/* Network */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Network
-                </label>
-                <select className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  <option value="trc20" className="bg-gray-800">TRX Tron (TRC20)</option>
-                  <option value="bep20" className="bg-gray-800">BSC BNB Smart Chain (BEP20)</option>
-                </select>
-              </div>
-
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Transaction Screenshot
+                  Transaction Screenshot *
                 </label>
-                <div className="border-2 border-dashed border-white/30 rounded-lg p-6 text-center">
+                <div className={`border-2 border-dashed rounded-lg p-6 text-center ${
+                  formErrors.file ? 'border-red-500' : 'border-white/30'
+                }`}>
                   {selectedFile ? (
                     <div className="space-y-3">
                       <CheckCircle className="h-8 w-8 text-green-400 mx-auto" />
@@ -576,19 +764,28 @@ export default function MyAccountPage() {
                     className="hidden"
                   />
                 </div>
+                {formErrors.file && (
+                  <p className="mt-1 text-sm text-red-300">{formErrors.file}</p>
+                )}
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={parseFloat(amount) < 50}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (validateForm()) {
+                    handleSubmitPayment();
+                  }
+                }}
+                disabled={isUploading}
                 className={`w-full py-4 rounded-lg font-medium transition-all transform ${
-                  parseFloat(amount) < 50
+                  isUploading
                     ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
                     : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 hover:scale-105'
                 }`}
               >
-                {parseFloat(amount) < 50 ? 'Minimum 50 USDT Required' : 'Submit Payment'}
+                {isUploading ? 'Submitting...' : 'Submit Payment'}
               </button>
             </form>
 
