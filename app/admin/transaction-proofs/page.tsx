@@ -66,6 +66,10 @@ export default function AdminTransactionProofsPage() {
 
   const updateTransactionStatus = async (transactionId: number, status: 'verified' | 'rejected') => {
     try {
+      console.log('=== UPDATING TRANSACTION STATUS ===');
+      console.log('Transaction ID:', transactionId);
+      console.log('New Status:', status);
+      
       const response = await fetch('/api/admin/transaction-proofs', {
         method: 'PUT',
         headers: {
@@ -77,12 +81,15 @@ export default function AdminTransactionProofsPage() {
         }),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success) {
         toast.success(`Transaction ${status} successfully!`);
         fetchTransactionProofs(); // Refresh the list
       } else {
+        console.error('Update failed:', data);
         toast.error(data.error || 'Failed to update transaction status');
       }
     } catch (error) {
@@ -304,14 +311,24 @@ export default function AdminTransactionProofsPage() {
                           {transaction.status === 'pending' && (
                             <>
                               <button
-                                onClick={() => updateTransactionStatus(transaction.id, 'verified')}
-                                className="text-green-600 hover:text-green-900"
+                                onClick={() => {
+                                  console.log('=== ACCEPT BUTTON CLICKED ===');
+                                  console.log('Transaction ID:', transaction.id);
+                                  updateTransactionStatus(transaction.id, 'verified');
+                                }}
+                                className="text-green-600 hover:text-green-900 p-1 border border-green-300 rounded hover:bg-green-50"
+                                title="Accept Transaction"
                               >
                                 <CheckCircle className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => updateTransactionStatus(transaction.id, 'rejected')}
-                                className="text-red-600 hover:text-red-900"
+                                onClick={() => {
+                                  console.log('=== REJECT BUTTON CLICKED ===');
+                                  console.log('Transaction ID:', transaction.id);
+                                  updateTransactionStatus(transaction.id, 'rejected');
+                                }}
+                                className="text-red-600 hover:text-red-900 p-1 border border-red-300 rounded hover:bg-red-50"
+                                title="Reject Transaction"
                               >
                                 <XCircle className="h-4 w-4" />
                               </button>

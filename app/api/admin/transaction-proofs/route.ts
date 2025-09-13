@@ -77,16 +77,21 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    console.log('=== TRANSACTION STATUS UPDATE API ===');
+    
     // For now, we'll allow access without authentication
     // In production, implement proper admin authentication
 
     const { transactionId, status } = await request.json();
+    console.log('Received data:', { transactionId, status });
 
     if (!transactionId || !status) {
+      console.log('Missing required fields');
       return NextResponse.json({ error: 'Transaction ID and status are required' }, { status: 400 });
     }
 
     if (!['pending', 'verified', 'rejected'].includes(status)) {
+      console.log('Invalid status:', status);
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
@@ -106,10 +111,12 @@ export async function PUT(request: NextRequest) {
     });
 
     // Update image status
-    await db.execute(
+    console.log('Updating database...');
+    const [result] = await db.execute(
       'UPDATE images SET status = ?, updated_at = NOW() WHERE id = ?',
       [status, transactionId]
     );
+    console.log('Database update result:', result);
 
     return NextResponse.json({ 
       success: true, 
