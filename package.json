@@ -11,6 +11,7 @@
   "dependencies": {
     "@vercel/blob": "^1.1.1",
     "bcryptjs": "^2.4.3",
+    "form-data": "^4.0.4",
     "formik": "^2.4.5",
     "framer-motion": "^11.11.17",
     "jsonwebtoken": "^9.0.2",
