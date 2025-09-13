@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== PAYMENT SUBMISSION START ===');
     const formData = await request.formData();
     
     const fullName = formData.get('fullName') as string;
@@ -14,6 +15,16 @@ export async function POST(request: NextRequest) {
     const network = formData.get('network') as string;
     const walletAddress = formData.get('walletAddress') as string;
     const file = formData.get('image') as File;
+
+    console.log('Payment data received:', {
+      fullName,
+      email,
+      amount,
+      network,
+      walletAddress,
+      fileName: file?.name,
+      fileSize: file?.size
+    });
 
     // Validation
     if (!fullName || !email || !amount || !network || !file || !walletAddress) {
@@ -72,26 +83,33 @@ export async function POST(request: NextRequest) {
 
     // Save to database
     try {
+      console.log('Starting database operations...');
+      
       // First, check if user exists by email
       const [users] = await db.execute('SELECT user_id FROM users WHERE email = ?', [email]) as any;
       let userId = null;
       
       if (users.length > 0) {
         userId = users[0].user_id;
+        console.log('User found with ID:', userId);
       } else {
         // Create a new user if they don't exist
+        console.log('Creating new user...');
         const [newUser] = await db.execute(
           'INSERT INTO users (name, email, password_hash, account_balance, total_earning, rewards, referral_code) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [fullName, email, '', 0, 0, 0, 'BDS_' + Math.random().toString(36).substr(2, 8).toUpperCase()]
         ) as any;
         userId = newUser.insertId;
+        console.log('New user created with ID:', userId);
       }
 
-      // Insert payment record into images table
+      // Insert into images table with correct column structure
+      console.log('Inserting into images table...');
       const [result] = await db.execute(
-        'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
         [userId, null, `/uploads/${filename}`, `TXN_${timestamp}`, amount, 'pending']
       ) as any;
+      console.log('Successfully inserted into images table with ID:', result.insertId);
 
       const paymentRecord = {
         id: result.insertId,
@@ -115,16 +133,34 @@ export async function POST(request: NextRequest) {
       });
     } catch (dbError) {
       console.error('Database error:', dbError);
+      console.error('Database error details:', {
+        message: dbError instanceof Error ? dbError.message : 'Unknown error',
+        stack: dbError instanceof Error ? dbError.stack : undefined,
+        code: (dbError as any)?.code,
+        errno: (dbError as any)?.errno,
+        sqlState: (dbError as any)?.sqlState
+      });
       return NextResponse.json(
-        { success: false, message: 'Failed to save payment to database' },
+        { 
+          success: false, 
+          message: 'Failed to save payment to database',
+          error: dbError instanceof Error ? dbError.message : 'Database error'
+        },
         { status: 500 }
       );
     }
 
   } catch (error) {
-    console.error('Payment submission error:', error);
+    console.error('=== PAYMENT SUBMISSION ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { 
+        success: false, 
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      },
       { status: 500 }
     );
   }
