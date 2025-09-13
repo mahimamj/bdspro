@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Mail, Lock, User, Chrome, Check } from 'lucide-react';
-// Firebase auth removed - using custom auth instead
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
