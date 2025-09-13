@@ -383,10 +383,16 @@ export default function AdminTransactionProofsPage() {
                           {transaction.status === 'pending' && (
                             <>
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   console.log('=== ACCEPT BUTTON CLICKED ===');
                                   console.log('Transaction ID:', transaction.id);
-                                  updateTransactionStatus(transaction.id, 'verified');
+                                  console.log('Transaction details:', transaction);
+                                  try {
+                                    await updateTransactionStatus(transaction.id, 'verified');
+                                    console.log('Accept button action completed');
+                                  } catch (error) {
+                                    console.error('Error in accept button:', error);
+                                  }
                                 }}
                                 className="text-green-600 hover:text-green-900 p-1 border border-green-300 rounded hover:bg-green-50"
                                 title="Accept Transaction"
@@ -394,10 +400,16 @@ export default function AdminTransactionProofsPage() {
                                 <CheckCircle className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   console.log('=== REJECT BUTTON CLICKED ===');
                                   console.log('Transaction ID:', transaction.id);
-                                  updateTransactionStatus(transaction.id, 'rejected');
+                                  console.log('Transaction details:', transaction);
+                                  try {
+                                    await updateTransactionStatus(transaction.id, 'rejected');
+                                    console.log('Reject button action completed');
+                                  } catch (error) {
+                                    console.error('Error in reject button:', error);
+                                  }
                                 }}
                                 className="text-red-600 hover:text-red-900 p-1 border border-red-300 rounded hover:bg-red-50"
                                 title="Reject Transaction"

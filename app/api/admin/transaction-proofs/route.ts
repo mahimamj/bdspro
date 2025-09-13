@@ -110,17 +110,60 @@ export async function PUT(request: NextRequest) {
       queueLimit: 0
     });
 
+    // Get transaction details first
+    console.log('Getting transaction details...');
+    const [transactionDetails] = await db.execute(
+      'SELECT i.*, u.user_id, u.name, u.email FROM images i LEFT JOIN users u ON i.referred_id = u.user_id WHERE i.id = ?',
+      [transactionId]
+    ) as any;
+
+    if (transactionDetails.length === 0) {
+      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+    }
+
+    const transaction = transactionDetails[0];
+    console.log('Transaction details:', transaction);
+
     // Update image status
-    console.log('Updating database...');
+    console.log('Updating transaction status...');
     const [result] = await db.execute(
       'UPDATE images SET status = ?, updated_at = NOW() WHERE id = ?',
       [status, transactionId]
     );
     console.log('Database update result:', result);
 
+    // If status is verified, update user account balance and create transaction record
+    if (status === 'verified' && transaction.user_id) {
+      console.log('Updating user account balance...');
+      
+      // Update user's account balance and total earnings
+      const [userUpdate] = await db.execute(
+        'UPDATE users SET account_balance = account_balance + ?, total_earning = total_earning + ?, updated_at = NOW() WHERE user_id = ?',
+        [transaction.amount, transaction.amount, transaction.user_id]
+      );
+      console.log('User balance update result:', userUpdate);
+
+      // Create transaction record
+      const [transactionRecord] = await db.execute(
+        'INSERT INTO transactions (user_id, amount, type, description, timestamp, balance) VALUES (?, ?, ?, ?, NOW(), (SELECT account_balance FROM users WHERE user_id = ?))',
+        [
+          transaction.user_id,
+          transaction.amount,
+          'deposit',
+          `Payment verification - Transaction #${transactionId}`,
+          transaction.user_id
+        ]
+      );
+      console.log('Transaction record created:', transactionRecord);
+
+      console.log(`Successfully credited $${transaction.amount} to user ${transaction.name} (${transaction.email})`);
+    }
+
     return NextResponse.json({ 
       success: true, 
-      message: 'Transaction status updated successfully!' 
+      message: status === 'verified' ? 
+        `Transaction verified and $${transaction.amount} credited to user account!` : 
+        'Transaction status updated successfully!' 
     });
 
   } catch (error) {
