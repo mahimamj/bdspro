@@ -133,12 +133,24 @@ export default function AdminTransactionProofsPage() {
   const filteredTransactions = transactions.filter(transaction => {
     const matchesFilter = filter === 'all' || transaction.status === filter;
     const matchesSearch = searchTerm === '' || 
-      transaction.referred_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.referrer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.transaction_hash.toLowerCase().includes(searchTerm.toLowerCase());
+      transaction.referred_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.referrer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.transaction_hash?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    console.log('Filtering transaction:', {
+      id: transaction.id,
+      status: transaction.status,
+      matchesFilter,
+      matchesSearch,
+      searchTerm,
+      filter
+    });
     
     return matchesFilter && matchesSearch;
   });
+
+  console.log('Filtered transactions count:', filteredTransactions.length);
+  console.log('All transactions count:', transactions.length);
 
   if (loading) {
     return (
