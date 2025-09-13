@@ -1,233 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { db } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('=== USER REFERRALS API START ===');
-    
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || '7'; // Default to user 7 for testing
+    const userId = searchParams.get('userId');
 
-    console.log('Requested userId:', userId);
-
-    // Get database connection
-    console.log('Connecting to database...');
-    const db = mysql.createPool({
-      host: process.env.MYSQL_HOST || "hopper.proxy.rlwy.net",
-      port: Number(process.env.MYSQL_PORT) || 50359,
-      user: process.env.MYSQL_USER || "root",
-      password: process.env.MYSQL_PASSWORD || "QxNkIyShqDFSigZzxHaxiyZmqtzekoXL",
-      database: process.env.MYSQL_DATABASE || "railway",
-      ssl: {
-        rejectUnauthorized: false
-      },
-      connectionLimit: 10,
-      waitForConnections: true,
-      queueLimit: 0
-    });
-
-    // Test database connection
-    try {
-      await db.execute('SELECT 1 as test');
-      console.log('✅ Database connection successful');
-    } catch (dbError) {
-      const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
-      console.error('❌ Database connection failed:', errorMessage);
-      throw new Error(`Database connection failed: ${errorMessage}`);
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: 'User ID is required' },
+        { status: 400 }
+      );
     }
 
-    // Get user's referral information
-    console.log('Fetching user information...');
-    const [userResult] = await db.execute(`
+    // Get user's referral code
+    const [users] = await db.execute('SELECT referral_code FROM users WHERE user_id = ?', [userId]) as any;
+    
+    if (users.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const referralCode = users[0].referral_code;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+    const referralLink = `${baseUrl}/signup?ref=${referralCode}`;
+
+    // Get level 1 referrals
+    const [level1Referrals] = await db.execute(`
       SELECT 
-        u.user_id,
+        u.user_id as id,
         u.name,
         u.email,
-        u.referral_code,
-        u.referrer_id,
-        r.name as referrer_name
+        u.created_at as joinedDate,
+        COALESCE(SUM(i.amount), 0) as totalInvested
       FROM users u
-      LEFT JOIN users r ON u.referrer_id = r.user_id
-      WHERE u.user_id = ?
+      LEFT JOIN images i ON u.user_id = i.referred_id
+      WHERE u.referrer_id = ?
+      GROUP BY u.user_id, u.name, u.email, u.created_at
     `, [userId]) as any;
 
-    console.log('User query result:', userResult);
+    // Get level 2 referrals
+    const [level2Referrals] = await db.execute(`
+      SELECT 
+        u2.user_id as id,
+        u2.name,
+        u2.email,
+        u2.created_at as joinedDate,
+        COALESCE(SUM(i.amount), 0) as totalInvested
+      FROM users u1
+      JOIN users u2 ON u1.user_id = u2.referrer_id
+      LEFT JOIN images i ON u2.user_id = i.referred_id
+      WHERE u1.referrer_id = ?
+      GROUP BY u2.user_id, u2.name, u2.email, u2.created_at
+    `, [userId]) as any;
 
-    if (userResult.length === 0) {
-      console.log('User not found, returning error...');
-      return NextResponse.json({ 
-        error: 'User not found',
-        message: 'User with this ID does not exist'
-      }, { status: 404 });
-    }
-
-    const user = userResult[0];
-    console.log('Found user:', user);
-
-    // Get user's referrals (Level 1 - direct referrals)
-    console.log('Fetching Level 1 referrals...');
-    let level1Referrals = [];
-    try {
-      // First try with deposits table
-      const [level1Result] = await db.execute(`
-        SELECT 
-          u.user_id,
-          u.name,
-          u.email,
-          u.created_at,
-          COALESCE(SUM(COALESCE(d.amount, 0)), 0) as total_invested,
-          COUNT(d.id) as deposit_count
-        FROM users u
-        LEFT JOIN deposits d ON u.user_id = d.user_id
-        WHERE u.referrer_id = ?
-        GROUP BY u.user_id, u.name, u.email, u.created_at
-        ORDER BY u.created_at DESC
-      `, [userId]) as any;
-      level1Referrals = level1Result;
-      console.log('Level 1 referrals found with deposits:', level1Referrals.length);
-    } catch (error) {
-      console.log('Deposits table not found, trying without deposits...');
-      // Fallback: get referrals without deposits table
-      try {
-        const [level1Result] = await db.execute(`
-          SELECT 
-            u.user_id,
-            u.name,
-            u.email,
-            u.created_at,
-            0 as total_invested,
-            0 as deposit_count
-          FROM users u
-          WHERE u.referrer_id = ?
-          ORDER BY u.created_at DESC
-        `, [userId]) as any;
-        level1Referrals = level1Result;
-        console.log('Level 1 referrals found without deposits:', level1Referrals.length);
-      } catch (fallbackError) {
-        const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
-        console.error('Error fetching Level 1 referrals:', errorMessage);
-        level1Referrals = [];
-      }
-    }
-
-    // Get Level 2 referrals (referrals of referrals)
-    console.log('Fetching Level 2 referrals...');
-    let level2Referrals = [];
-    try {
-      // First try with deposits table
-      const [level2Result] = await db.execute(`
-        SELECT 
-          u2.user_id,
-          u2.name,
-          u2.email,
-          u2.created_at,
-          COALESCE(SUM(COALESCE(d.amount, 0)), 0) as total_invested,
-          COUNT(d.id) as deposit_count,
-          u1.name as level1_referral_name
-        FROM users u1
-        JOIN users u2 ON u2.referrer_id = u1.user_id
-        LEFT JOIN deposits d ON u2.user_id = d.user_id
-        WHERE u1.referrer_id = ?
-        GROUP BY u2.user_id, u2.name, u2.email, u2.created_at, u1.name
-        ORDER BY u2.created_at DESC
-      `, [userId]) as any;
-      level2Referrals = level2Result;
-      console.log('Level 2 referrals found with deposits:', level2Referrals.length);
-    } catch (error) {
-      console.log('Deposits table not found, trying without deposits...');
-      // Fallback: get referrals without deposits table
-      try {
-        const [level2Result] = await db.execute(`
-          SELECT 
-            u2.user_id,
-            u2.name,
-            u2.email,
-            u2.created_at,
-            0 as total_invested,
-            0 as deposit_count,
-            u1.name as level1_referral_name
-          FROM users u1
-          JOIN users u2 ON u2.referrer_id = u1.user_id
-          WHERE u1.referrer_id = ?
-          ORDER BY u2.created_at DESC
-        `, [userId]) as any;
-        level2Referrals = level2Result;
-        console.log('Level 2 referrals found without deposits:', level2Referrals.length);
-      } catch (fallbackError) {
-        const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
-        console.error('Error fetching Level 2 referrals:', errorMessage);
-        level2Referrals = [];
-      }
-    }
-
-    // Calculate total earnings
-    const level1Total = level1Referrals.reduce((sum: number, ref: any) => sum + parseFloat(ref.total_invested), 0);
-    const level2Total = level2Referrals.reduce((sum: number, ref: any) => sum + parseFloat(ref.total_invested), 0);
-    
-    // Calculate commission (example: 5% for Level 1, 2% for Level 2)
-    const level1Commission = level1Total * 0.05;
-    const level2Commission = level2Total * 0.02;
-    const totalCommission = level1Commission + level2Commission;
-
-    // Generate referral link
-    const baseUrl = 'https://bdspro-fawn.vercel.app';
-    const referralLink = `${baseUrl}/signup?ref=${user.referral_code}`;
-
-    // Format referrals for frontend
-    const formatReferrals = (referrals: any[], level: number) => {
-      return referrals.map((ref: any) => ({
-        id: ref.user_id,
-        name: ref.name,
-        email: ref.email,
-        joinedDate: new Date(ref.created_at).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'numeric',
-          day: 'numeric'
-        }),
-        totalInvested: parseFloat(ref.total_invested).toFixed(2),
-        depositCount: ref.deposit_count,
-        level: level,
-        level1ReferralName: ref.level1_referral_name || null
-      }));
-    };
-
-    const response = {
+    return NextResponse.json({
       success: true,
       user: {
-        id: user.user_id,
-        name: user.name,
-        email: user.email,
-        referralCode: user.referral_code,
-        referralLink,
-        referrerName: user.referrer_name
+        referralCode,
+        referralLink
       },
       referrals: {
-        level1: formatReferrals(level1Referrals, 1),
-        level2: formatReferrals(level2Referrals, 2)
-      },
-      statistics: {
-        level1Count: level1Referrals.length,
-        level2Count: level2Referrals.length,
-        level1Total: level1Total.toFixed(2),
-        level2Total: level2Total.toFixed(2),
-        level1Commission: level1Commission.toFixed(2),
-        level2Commission: level2Commission.toFixed(2),
-        totalCommission: totalCommission.toFixed(2)
+        level1: level1Referrals,
+        level2: level2Referrals
       }
-    };
-
-    console.log(`Found ${level1Referrals.length} Level 1 referrals and ${level2Referrals.length} Level 2 referrals for user ${userId}`);
-
-    return NextResponse.json(response);
+    });
 
   } catch (error) {
     console.error('Error fetching user referrals:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({
-      error: 'Failed to fetch user referrals',
-      message: errorMessage,
-      details: error instanceof Error ? error.stack : undefined
-    }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

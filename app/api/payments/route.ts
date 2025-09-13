@@ -7,7 +7,20 @@ import { db } from '@/lib/db';
 export async function POST(request: NextRequest) {
   try {
     console.log('=== PAYMENT SUBMISSION START ===');
-    const formData = await request.formData();
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
+    console.log('Content-Type:', request.headers.get('content-type'));
+    
+    let formData;
+    try {
+      formData = await request.formData();
+      console.log('FormData parsed successfully');
+    } catch (formDataError) {
+      console.error('FormData parsing error:', formDataError);
+      return NextResponse.json(
+        { success: false, message: 'Failed to parse form data', error: formDataError instanceof Error ? formDataError.message : 'Unknown error' },
+        { status: 400 }
+      );
+    }
     
     const fullName = formData.get('fullName') as string;
     const email = formData.get('email') as string;
@@ -66,24 +79,60 @@ export async function POST(request: NextRequest) {
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
+    console.log('Uploads directory path:', uploadsDir);
+    
+    try {
+      if (!existsSync(uploadsDir)) {
+        console.log('Creating uploads directory...');
+        await mkdir(uploadsDir, { recursive: true });
+        console.log('Uploads directory created successfully');
+      } else {
+        console.log('Uploads directory already exists');
+      }
+    } catch (dirError) {
+      console.error('Error creating uploads directory:', dirError);
+      return NextResponse.json(
+        { success: false, message: 'Failed to create uploads directory', error: dirError instanceof Error ? dirError.message : 'Directory creation error' },
+        { status: 500 }
+      );
     }
 
     // Generate unique filename
     const timestamp = Date.now();
-    const fileExtension = file.name.split('.').pop();
+    const fileExtension = file.name.split('.').pop() || 'png';
     const filename = `payment_${timestamp}.${fileExtension}`;
     const filepath = join(uploadsDir, filename);
+    console.log('File will be saved to:', filepath);
 
     // Save file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    try {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filepath, buffer);
+      console.log('File saved successfully');
+    } catch (fileError) {
+      console.error('Error saving file:', fileError);
+      return NextResponse.json(
+        { success: false, message: 'Failed to save file', error: fileError instanceof Error ? fileError.message : 'File save error' },
+        { status: 500 }
+      );
+    }
 
     // Save to database
     try {
       console.log('Starting database operations...');
+      
+      // Test database connection first
+      try {
+        const [testResult] = await db.execute('SELECT 1 as test') as any;
+        console.log('Database connection test successful:', testResult);
+      } catch (dbTestError) {
+        console.error('Database connection test failed:', dbTestError);
+        return NextResponse.json(
+          { success: false, message: 'Database connection failed', error: dbTestError instanceof Error ? dbTestError.message : 'Database error' },
+          { status: 500 }
+        );
+      }
       
       // First, check if user exists by email
       const [users] = await db.execute('SELECT user_id FROM users WHERE email = ?', [email]) as any;
@@ -105,6 +154,13 @@ export async function POST(request: NextRequest) {
 
       // Insert into images table with correct column structure
       console.log('Inserting into images table...');
+      console.log('Insert data:', {
+        userId,
+        filename,
+        amount,
+        timestamp
+      });
+      
       const [result] = await db.execute(
         'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
         [userId, null, `/uploads/${filename}`, `TXN_${timestamp}`, amount, 'pending']
