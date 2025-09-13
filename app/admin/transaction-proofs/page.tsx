@@ -35,6 +35,7 @@ export default function AdminTransactionProofsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionProof | null>(null);
 
   useEffect(() => {
+    console.log('=== COMPONENT MOUNTED - FETCHING DATA ===');
     fetchTransactionProofs();
   }, []);
 
@@ -202,7 +203,10 @@ export default function AdminTransactionProofsPage() {
 
             {/* Refresh Button */}
             <button
-              onClick={fetchTransactionProofs}
+              onClick={() => {
+                console.log('=== MANUAL REFRESH CLICKED ===');
+                fetchTransactionProofs();
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
