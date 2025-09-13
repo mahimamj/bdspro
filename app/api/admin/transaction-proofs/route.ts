@@ -45,6 +45,21 @@ export async function GET(request: NextRequest) {
 
     console.log('Database query result:', transactions);
     console.log('Number of transactions found:', transactions?.length || 0);
+    
+    // Debug each transaction
+    if (transactions && transactions.length > 0) {
+      console.log('\n=== TRANSACTION DETAILS ===');
+      transactions.forEach((tx, index) => {
+        console.log(`Transaction ${index + 1}:`);
+        console.log(`  ID: ${tx.id}`);
+        console.log(`  Hash: ${tx.transaction_hash}`);
+        console.log(`  Amount: ${tx.amount}`);
+        console.log(`  Referred: ${tx.referred_name} (${tx.referred_email})`);
+        console.log(`  Referrer: ${tx.referrer_name || 'N/A'} (${tx.referrer_email || 'N/A'})`);
+        console.log(`  Status: ${tx.status}`);
+        console.log('---');
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 

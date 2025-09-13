@@ -40,13 +40,20 @@ export default function AdminTransactionProofsPage() {
 
   const fetchTransactionProofs = async () => {
     try {
+      console.log('=== FETCHING TRANSACTION PROOFS ===');
       setLoading(true);
-      const response = await fetch('/api/admin/transaction-proofs');
+      // Add cache-busting parameter
+      const response = await fetch(`/api/admin/transaction-proofs?t=${Date.now()}`);
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success) {
+        console.log('Setting transactions:', data.transactions);
         setTransactions(data.transactions);
+        console.log('Transactions state updated, count:', data.transactions?.length || 0);
       } else {
+        console.error('Failed to fetch transaction proofs:', data);
         toast.error('Failed to fetch transaction proofs');
       }
     } catch (error) {
