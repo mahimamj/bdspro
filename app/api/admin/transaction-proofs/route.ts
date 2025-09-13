@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     // Debug each transaction
     if (transactions && transactions.length > 0) {
       console.log('\n=== TRANSACTION DETAILS ===');
-      transactions.forEach((tx, index) => {
+      transactions.forEach((tx: any, index: number) => {
         console.log(`Transaction ${index + 1}:`);
         console.log(`  ID: ${tx.id}`);
         console.log(`  Hash: ${tx.transaction_hash}`);
