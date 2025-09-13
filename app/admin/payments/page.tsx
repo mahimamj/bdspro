@@ -70,14 +70,14 @@ const AdminPaymentsPage = () => {
     }
   };
 
-  const updatePaymentStatus = async (paymentId: string, status: 'approved' | 'rejected', notes?: string) => {
+  const updatePaymentStatus = async (paymentId: string, status: 'verified' | 'rejected', notes?: string) => {
     try {
-      const response = await fetch(`/api/admin/payments/${paymentId}`, {
+      const response = await fetch('/api/admin/payments', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status, adminNotes: notes }),
+        body: JSON.stringify({ id: paymentId, status }),
       });
 
       const data = await response.json();
@@ -106,7 +106,7 @@ const AdminPaymentsPage = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-500';
-      case 'approved': return 'bg-green-500';
+      case 'verified': return 'bg-green-500';
       case 'rejected': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
@@ -115,7 +115,7 @@ const AdminPaymentsPage = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="w-4 h-4" />;
-      case 'approved': return <Check className="w-4 h-4" />;
+      case 'verified': return <Check className="w-4 h-4" />;
       case 'rejected': return <X className="w-4 h-4" />;
       default: return null;
     }
@@ -177,7 +177,7 @@ const AdminPaymentsPage = () => {
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
+                <option value="verified">Verified</option>
                 <option value="rejected">Rejected</option>
               </select>
             </div>
@@ -269,7 +269,7 @@ const AdminPaymentsPage = () => {
                           {payment.status === 'pending' && (
                             <>
                               <button
-                                onClick={() => updatePaymentStatus(payment.id, 'approved')}
+                                onClick={() => updatePaymentStatus(payment.id, 'verified')}
                                 className="text-green-600 hover:text-green-900"
                               >
                                 <Check className="w-4 h-4" />
@@ -370,10 +370,10 @@ const AdminPaymentsPage = () => {
                 {selectedPayment.status === 'pending' && (
                   <div className="flex space-x-4 mt-6">
                     <button
-                      onClick={() => updatePaymentStatus(selectedPayment.id, 'approved', adminNotes)}
+                      onClick={() => updatePaymentStatus(selectedPayment.id, 'verified', adminNotes)}
                       className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-semibold"
                     >
-                      Approve Payment
+                      Verify Payment
                     </button>
                     <button
                       onClick={() => updatePaymentStatus(selectedPayment.id, 'rejected', adminNotes)}

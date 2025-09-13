@@ -56,6 +56,7 @@ export default function MyAccountPage() {
   const [fileName, setFileName] = useState<string>('');
   const [fullName, setFullName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const [hashPassword, setHashPassword] = useState<string>('');
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
@@ -118,6 +119,12 @@ export default function MyAccountPage() {
       errors.email = 'Email address is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!hashPassword.trim()) {
+      errors.hashPassword = 'Hash password is required';
+    } else if (hashPassword.length < 6) {
+      errors.hashPassword = 'Hash password must be at least 6 characters';
     }
     
     if (!amount || parseFloat(amount) < 50) {
@@ -310,6 +317,7 @@ export default function MyAccountPage() {
       formData.append('fullName', fullName);
       formData.append('email', email);
       formData.append('amount', amount);
+      formData.append('hashPassword', hashPassword);
       formData.append('network', selectedNetwork);
       formData.append('walletAddress', getCurrentWalletAddress());
 
@@ -327,6 +335,7 @@ export default function MyAccountPage() {
         setFullName('');
         setEmail('');
         setAmount('');
+        setHashPassword('');
         setSelectedFile(null);
         setFileName('');
         setFormErrors({});
@@ -680,6 +689,30 @@ export default function MyAccountPage() {
             />
                 {formErrors.email && (
                   <p className="mt-1 text-sm text-red-300">{formErrors.email}</p>
+                )}
+          </div>
+
+              {/* Hash Password */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Hash Password *
+            </label>
+            <input
+              type="password"
+                  value={hashPassword}
+                  onChange={(e) => {
+                    setHashPassword(e.target.value);
+                    if (formErrors.hashPassword) {
+                      setFormErrors(prev => ({ ...prev, hashPassword: '' }));
+                    }
+                  }}
+              placeholder="Enter your hash password"
+                  className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    formErrors.hashPassword ? 'border-red-500' : 'border-white/30'
+                  }`}
+            />
+                {formErrors.hashPassword && (
+                  <p className="mt-1 text-sm text-red-300">{formErrors.hashPassword}</p>
                 )}
           </div>
 

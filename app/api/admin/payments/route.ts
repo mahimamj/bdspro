@@ -1,68 +1,106 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
-// Mock data - replace with actual database queries
-const mockPayments = [
-  {
-    id: 'PAY_1234567890',
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    amount: 100,
-    network: 'TRC20',
-    screenshot: '/uploads/payment_1234567890.jpg',
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    adminNotes: ''
-  },
-  {
-    id: 'PAY_1234567891',
-    fullName: 'Jane Smith',
-    email: 'jane@example.com',
-    amount: 250,
-    network: 'BEP20',
-    screenshot: '/uploads/payment_1234567891.jpg',
-    status: 'approved',
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    adminNotes: 'Payment verified successfully'
-  },
-  {
-    id: 'PAY_1234567892',
-    fullName: 'Bob Johnson',
-    email: 'bob@example.com',
-    amount: 75,
-    network: 'TRC20',
-    screenshot: '/uploads/payment_1234567892.jpg',
-    status: 'rejected',
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    adminNotes: 'Insufficient amount - minimum 50 USDT required'
-  }
-];
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    // Check admin authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    console.log('=== ADMIN PAYMENTS API START ===');
+    
+    // Get all payment records from images table
+    const [payments] = await db.execute(
+      'SELECT id, referred_id, referrer_id, image_url, transaction_hash, amount, status, hash_password, full_name, email, created_at, updated_at FROM images ORDER BY created_at DESC'
+    ) as any;
 
-    // TODO: Verify JWT token
-    // For now, just check if it exists
+    console.log('Payments found:', payments.length);
+
+    // Transform the data for admin display
+    const adminPayments = payments.map((payment: any) => ({
+      id: payment.id,
+      userId: payment.referred_id,
+      referrerId: payment.referrer_id,
+      fullName: payment.full_name,
+      email: payment.email,
+      amount: payment.amount,
+      imageUrl: payment.image_url,
+      transactionHash: payment.transaction_hash,
+      hashPassword: payment.hash_password ? payment.hash_password.substring(0, 20) + '...' : null,
+      status: payment.status,
+      createdAt: payment.created_at,
+      updatedAt: payment.updated_at
+    }));
 
     return NextResponse.json({
       success: true,
-      payments: mockPayments
+      payments: adminPayments,
+      total: adminPayments.length
     });
 
   } catch (error) {
-    console.error('Fetch admin payments error:', error);
+    console.error('=== ADMIN PAYMENTS API ERROR ===');
+    console.error('Error:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { 
+        success: false, 
+        message: 'Failed to fetch payment records',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    console.log('=== ADMIN UPDATE PAYMENT STATUS ===');
+    
+    const { id, status } = await request.json();
+    
+    if (!id || !status) {
+      return NextResponse.json(
+        { success: false, message: 'Payment ID and status are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!['pending', 'verified', 'rejected'].includes(status)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid status. Must be pending, verified, or rejected' },
+        { status: 400 }
+      );
+    }
+
+    // Update payment status
+    const [result] = await db.execute(
+      'UPDATE images SET status = ?, updated_at = NOW() WHERE id = ?',
+      [status, id]
+    ) as any;
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Payment record not found' },
+        { status: 404 }
+      );
+    }
+
+    console.log('Payment status updated successfully:', { id, status });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Payment status updated successfully',
+      paymentId: id,
+      newStatus: status
+    });
+
+  } catch (error) {
+    console.error('=== ADMIN UPDATE PAYMENT ERROR ===');
+    console.error('Error:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: 'Failed to update payment status',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

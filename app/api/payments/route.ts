@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { db } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
     const fullName = formData.get('fullName') as string;
     const email = formData.get('email') as string;
     const amount = parseFloat(formData.get('amount') as string);
+    const hashPassword = formData.get('hashPassword') as string;
     const network = formData.get('network') as string;
     const walletAddress = formData.get('walletAddress') as string;
     const file = formData.get('image') as File;
@@ -38,9 +40,16 @@ export async function POST(request: NextRequest) {
     });
 
     // Validation
-    if (!fullName || !email || !amount || !network || !file || !walletAddress) {
+    if (!fullName || !email || !amount || !hashPassword || !network || !file || !walletAddress) {
       return NextResponse.json(
         { success: false, message: 'All fields are required' },
+        { status: 400 }
+      );
+    }
+
+    if (hashPassword.length < 6) {
+      return NextResponse.json(
+        { success: false, message: 'Hash password must be at least 6 characters' },
         { status: 400 }
       );
     }
@@ -74,6 +83,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Hash the password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(hashPassword, saltRounds);
+    console.log('Password hashed successfully');
 
     // Generate unique filename
     const timestamp = Date.now();
@@ -150,12 +164,13 @@ export async function POST(request: NextRequest) {
         userId,
         filename,
         amount,
-        timestamp
+        timestamp,
+        hashedPassword: hashedPassword.substring(0, 20) + '...' // Log only first 20 chars for security
       });
       
       const [result] = await db.execute(
-        'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [userId, null, fileUrl, `TXN_${timestamp}`, amount, 'pending']
+        'INSERT INTO images (referred_id, referrer_id, image_url, transaction_hash, amount, status, hash_password, full_name, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        [userId, null, fileUrl, `TXN_${timestamp}`, amount, 'pending', hashedPassword, fullName, email]
       ) as any;
       console.log('Successfully inserted into images table with ID:', result.insertId);
 
@@ -164,6 +179,7 @@ export async function POST(request: NextRequest) {
       fullName,
       email,
       amount,
+      hashPassword: hashedPassword.substring(0, 20) + '...', // Only show first 20 chars for security
       network,
       screenshot: fileUrl,
       status: 'pending',
