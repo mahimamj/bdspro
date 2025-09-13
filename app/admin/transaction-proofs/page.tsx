@@ -338,7 +338,7 @@ export default function AdminTransactionProofsPage() {
                 {/* Debug Info */}
                 <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
                   <p className="text-sm font-medium text-yellow-800">Debug Info:</p>
-                  <p className="text-xs text-yellow-700">Transaction ID: {selectedTransaction.id}</p>
+                  <p className="text-xs text-yellow-700">Transaction Hash: {selectedTransaction.transaction_hash}</p>
                   <p className="text-xs text-yellow-700">Image URL Length: {selectedTransaction.image_url?.length || 0}</p>
                   <p className="text-xs text-yellow-700">Image URL Type: {selectedTransaction.image_url?.startsWith('data:') ? 'Base64' : 'File Path'}</p>
                   <p className="text-xs text-yellow-700">Image Preview: {selectedTransaction.image_url?.substring(0, 50)}...</p>
@@ -347,8 +347,8 @@ export default function AdminTransactionProofsPage() {
                 {/* Transaction Details */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Transaction ID</label>
-                    <p className="mt-1 text-sm text-gray-900">#{selectedTransaction.id}</p>
+                    <label className="block text-sm font-medium text-gray-700">Transaction Hash</label>
+                    <p className="mt-1 text-sm text-gray-900 font-mono break-all">{selectedTransaction.transaction_hash}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Amount</label>
