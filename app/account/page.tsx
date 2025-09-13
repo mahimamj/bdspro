@@ -20,7 +20,8 @@ import {
   Share2,
   Save,
   Gift,
-  DollarSign
+  DollarSign,
+  BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -47,10 +48,88 @@ export default function MyAccountPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [amount, setAmount] = useState<string>('');
+  const [showAmountWarning, setShowAmountWarning] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string>('');
 
   useEffect(() => {
     loadPaymentMethods();
+    loadUserData();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch('/api/dashboard/user-data', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data.data);
+      } else {
+        console.error('Failed to load user data');
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAmountChange = (value: string) => {
+    setAmount(value);
+    const numValue = parseFloat(value);
+    if (numValue > 0 && numValue < 50) {
+      setShowAmountWarning(true);
+    } else {
+      setShowAmountWarning(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file (JPG/PNG)');
+        return;
+      }
+      
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+      setFileName(file.name);
+      toast.success('File selected successfully');
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setFileName('');
+    // Reset the file input
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
 
   const loadPaymentMethods = async () => {
     try {
@@ -279,263 +358,249 @@ export default function MyAccountPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading account data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 py-8">
+      <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Account</h1>
-          <p className="text-gray-600">Manage your account and deposit funds.</p>
+          <h1 className="text-3xl font-bold text-white mb-2">My Account</h1>
+          <p className="text-blue-200">Manage your account and deposit funds.</p>
         </div>
 
-        {/* Account Overview */}
-        <div className="bg-gray-100 rounded-2xl p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4">Account Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg p-4 flex items-center">
-              <div className="bg-blue-100 p-3 rounded-full mr-4">
-                <Wallet className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Account Balance</p>
-                <p className="text-xl font-semibold">$0.00 USDT</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg p-4 flex items-center">
-              <div className="bg-green-100 p-3 rounded-full mr-4">
-                <CreditCard className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Earnings</p>
-                <p className="text-xl font-semibold">$0.00 USDT</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg p-4 flex items-center">
-              <div className="bg-purple-100 p-3 rounded-full mr-4">
-                <Gift className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Rewards</p>
-                <p className="text-xl font-semibold">$0.00 USDT</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Deposit USDT Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 relative">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Deposit USDT</h2>
-            <div className="flex items-center text-green-600 text-sm">
-              <Shield className="h-4 w-4 mr-1" />
-              <span>Secure</span>
-            </div>
-          </div>
-
-          {/* QR Code */}
-          <div className="text-center mb-6">
-            <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
-              <img 
-                src={generateQRCode()} 
-                alt="QR Code" 
-                className="w-48 h-48 mx-auto"
-              />
-            </div>
-          </div>
-
-          {/* Network Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Network
-            </label>
-            <div className="relative">
-              <select
-                value={selectedNetwork}
-                onChange={(e) => setSelectedNetwork(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
-              >
-                <option value="bep20">BSC BNB Smart Chain (BEP20)</option>
-                <option value="trc20">TRX Tron (TRC20)</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Deposit Address */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {getCurrentNetworkName()} Deposit Address
-            </label>
-            <div className="flex items-center bg-gray-50 p-3 rounded-lg">
-              <code className="flex-1 text-sm font-mono break-all">
-                {getCurrentWalletAddress()}
-              </code>
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Payment QR Code */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-6">Payment QR Code</h2>
+            
+            {/* Network Selection Buttons */}
+            <div className="flex gap-3 mb-6">
               <button
-                onClick={() => copyToClipboard(getCurrentWalletAddress())}
-                className="ml-2 p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                onClick={() => setSelectedNetwork('trc20')}
+                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+                  selectedNetwork === 'trc20'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
               >
-                <Copy className="h-4 w-4 text-gray-600" />
+                TRX Tron (TRC20)
+              </button>
+              <button
+                onClick={() => setSelectedNetwork('bep20')}
+                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+                  selectedNetwork === 'bep20'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                BSC BNB Smart Chain (BEP20)
               </button>
             </div>
-          </div>
 
-          {/* Security Verification */}
-          <div className="bg-blue-50 p-4 rounded-lg mb-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-blue-800">
-                Deposit Address Security Verification
-              </span>
-              <button 
-                onClick={() => setShowVerifyModal(true)}
-                className="text-blue-600 text-sm font-medium hover:underline"
-              >
-                Verify Now →
-              </button>
-            </div>
-          </div>
-
-          {/* Minimum Deposit */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center">
-              <span className="text-sm font-medium text-gray-700">Minimum Deposit</span>
-              <AlertCircle className="h-4 w-4 text-gray-400 ml-1" />
-            </div>
-            <span className="text-sm font-semibold text-gray-900">50 USDT</span>
-          </div>
-
-          {/* Details Section */}
-          <div className="mb-6">
-            <button
-              onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-            >
-              Details
-              <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
-            </button>
-            {showDetails && (
-              <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  • Only send USDT to this address<br/>
-                  • Sending other cryptocurrencies may result in permanent loss<br/>
-                  • Minimum deposit: 50 USDT<br/>
-                  • Processing time: 5-10 minutes
-                </p>
+            {/* QR Code */}
+            <div className="text-center mb-6">
+              <div className="inline-block p-4 bg-white rounded-lg">
+                <img 
+                  src={generateQRCode()} 
+                  alt="QR Code" 
+                  className="w-64 h-64 mx-auto"
+                />
               </div>
-            )}
+            </div>
+
+            {/* Deposit Address */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-white mb-2">
+                {getCurrentNetworkName()} Deposit Address
+              </label>
+              <div className="flex items-center bg-white/20 p-3 rounded-lg">
+                <code className="flex-1 text-sm font-mono text-white break-all">
+                  {getCurrentWalletAddress()}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(getCurrentWalletAddress())}
+                  className="ml-2 p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <Copy className="h-4 w-4 text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 mb-6">
+              <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors">
+                <Save className="h-4 w-4" />
+                Save as Image
+              </button>
+              <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors">
+                <Share2 className="h-4 w-4" />
+                Share Address
+              </button>
+            </div>
+
+            {/* Payment Details */}
+            <div className="space-y-2 text-white">
+              <div className="flex justify-between">
+                <span className="text-sm">Minimum Deposit:</span>
+                <span className="text-sm font-semibold">50 USDT</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm">Network Fee:</span>
+                <span className="text-sm font-semibold">~1-5 USDT</span>
+              </div>
+            </div>
           </div>
 
-          {/* User Email Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Your Email Address
-            </label>
-            <input
-              type="email"
-              value={userEmail}
-              onChange={(e) => setUserEmail(e.target.value)}
-              placeholder="Enter your email address"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
+          {/* Right Column - Payment Information */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-6">Payment Information</h2>
+            
+            <form className="space-y-6">
+              {/* Full Name */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter your full name"
+                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
-          {/* Transaction Hash Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Transaction Hash
-            </label>
-            <input
-              type="text"
-              value={transactionHash}
-              onChange={(e) => setTransactionHash(e.target.value)}
-              placeholder="Enter your transaction hash from blockchain"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              You can find this in your wallet transaction history
-            </p>
-          </div>
+              {/* Email Address */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="Enter your email address"
+                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
-          {/* Upload Payment Proof */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Upload Payment Proof (Optional)
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              {uploadedFile ? (
-                <div className="space-y-2">
-                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
-                  <p className="text-sm text-gray-600">{uploadedFileName}</p>
-                  <button
-                    onClick={removeUploadedFile}
-                    className="text-red-600 text-sm hover:underline"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-2">
-                    Click to upload payment screenshot
-                  </p>
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Amount (USDT)
+                </label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {showAmountWarning && (
+                  <div className="mt-2 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <p className="text-sm text-red-200">
+                      <strong>Warning:</strong> Minimum deposit is 50 USDT. Amounts below 50 USDT will not be processed.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Network */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Network
+                </label>
+                <select className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <option value="trc20" className="bg-gray-800">TRX Tron (TRC20)</option>
+                  <option value="bep20" className="bg-gray-800">BSC BNB Smart Chain (BEP20)</option>
+                </select>
+              </div>
+
+              {/* File Upload */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Transaction Screenshot
+                </label>
+                <div className="border-2 border-dashed border-white/30 rounded-lg p-6 text-center">
+                  {selectedFile ? (
+                    <div className="space-y-3">
+                      <CheckCircle className="h-8 w-8 text-green-400 mx-auto" />
+                      <p className="text-sm text-white font-medium">{fileName}</p>
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          type="button"
+                          onClick={removeFile}
+                          className="px-3 py-1 bg-red-500/20 text-red-200 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                        >
+                          Remove
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById('file-upload')?.click()}
+                          className="px-3 py-1 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors text-sm"
+                        >
+                          Change File
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="h-8 w-8 text-white/70 mx-auto mb-2" />
+                      <p className="text-sm text-white/70 mb-2">
+                        Upload a screenshot of your blockchain transaction
+                      </p>
+                      <p className="text-xs text-white/50 mb-4">
+                        (JPG/PNG, max 5MB)
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                        className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+                      >
+                        Choose File
+                      </button>
+                    </div>
+                  )}
                   <input
-                    ref={fileInputRef}
+                    id="file-upload"
                     type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
+                    accept="image/jpeg,image/png,image/jpg"
+                    onChange={handleFileSelect}
                     className="hidden"
                   />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-blue-600 text-sm font-medium hover:underline"
-                  >
-                    Choose File
-                  </button>
                 </div>
-              )}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Upload a screenshot of your payment for admin verification
-            </p>
-          </div>
+              </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={handleSaveAsImage}
-              disabled={!uploadedFile || isUploading}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Save className="h-4 w-4" />
-              {isUploading ? 'Saving...' : 'Save as Image'}
-            </button>
-            <button
-              onClick={handleDeposit}
-              disabled={!userEmail || !transactionHash || isUploading}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <DollarSign className="h-4 w-4" />
-              {isUploading ? 'Processing...' : 'Submit Deposit'}
-            </button>
-          </div>
-        </div>
-
-        {/* Warning Message */}
-        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div>
-              <p className="text-sm text-yellow-800">
-                Have an uncredited deposit? If you've made a deposit but it hasn't appeared in your account, please contact support.
-              </p>
-              <button className="text-blue-600 text-sm font-medium hover:underline mt-1">
-                Apply for return →
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={parseFloat(amount) < 50}
+                className={`w-full py-4 rounded-lg font-medium transition-all transform ${
+                  parseFloat(amount) < 50
+                    ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 hover:scale-105'
+                }`}
+              >
+                {parseFloat(amount) < 50 ? 'Minimum 50 USDT Required' : 'Submit Payment'}
               </button>
+            </form>
+
+            {/* Important Notice */}
+            <div className="mt-6 bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
+              <p className="text-sm text-yellow-200">
+                <strong>Important:</strong> Make sure to send the exact amount and use the correct network. Double-check the wallet address before sending your transaction.
+              </p>
             </div>
           </div>
         </div>
+
       </div>
 
       {/* Verify Deposit Modal */}
