@@ -89,12 +89,7 @@ const SignupFormContent = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-      router.push('/dashboard');
-    } catch (error) {
-      // Error is handled in the hook
-    }
+    toast.error('Google sign-in is currently unavailable. Please use email signup.');
   };
 
   return (
