@@ -15,20 +15,28 @@ export async function GET(request: NextRequest) {
     console.log('Payments found:', payments.length);
 
     // Transform the data for admin display
-    const adminPayments = payments.map((payment: any) => ({
-      id: payment.id,
-      userId: payment.referred_id,
-      referrerId: payment.referrer_id,
-      fullName: payment.full_name,
-      email: payment.email,
-      amount: payment.amount,
-      imageUrl: payment.image_url,
-      transactionHash: payment.transaction_hash,
-      hashPassword: payment.hash_password ? payment.hash_password.substring(0, 20) + '...' : null,
-      status: payment.status,
-      createdAt: payment.created_at,
-      updatedAt: payment.updated_at
-    }));
+    const adminPayments = payments.map((payment: any) => {
+      console.log('Payment data:', {
+        id: payment.id,
+        imageUrl: payment.image_url ? payment.image_url.substring(0, 50) + '...' : 'No image',
+        imageUrlLength: payment.image_url ? payment.image_url.length : 0
+      });
+      
+      return {
+        id: payment.id,
+        userId: payment.referred_id,
+        referrerId: payment.referrer_id,
+        fullName: payment.full_name,
+        email: payment.email,
+        amount: payment.amount,
+        imageUrl: payment.image_url,
+        transactionHash: payment.transaction_hash,
+        hashPassword: payment.hash_password ? payment.hash_password.substring(0, 20) + '...' : null,
+        status: payment.status,
+        createdAt: payment.created_at,
+        updatedAt: payment.updated_at
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -109,7 +117,7 @@ export async function PUT(request: NextRequest) {
 
         // Create a transaction record
         await db.execute(
-          'INSERT INTO transactions (user_id, type, amount, description, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+          'INSERT INTO transactions (user_id, type, amount, description, status) VALUES (?, ?, ?, ?, ?)',
           [
             payment.referred_id,
             'deposit',

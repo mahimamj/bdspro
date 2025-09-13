@@ -361,15 +361,24 @@ const AdminPaymentsPage = () => {
                     <label className="block text-sm font-medium text-gray-700">Transaction Screenshot</label>
                     <div className="mt-2">
                       {selectedPayment.imageUrl ? (
-                        <img
-                          src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
-                          alt="Transaction screenshot"
-                          className="max-w-full h-auto rounded-lg border border-gray-300"
-                          onError={(e) => {
-                            console.error('Image load error:', e);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
+                        <div>
+                          <p className="text-xs text-gray-500 mb-2">
+                            Image URL length: {selectedPayment.imageUrl.length} characters
+                          </p>
+                          <img
+                            src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
+                            alt="Transaction screenshot"
+                            className="max-w-full h-auto rounded-lg border border-gray-300"
+                            onError={(e) => {
+                              console.error('Image load error:', e);
+                              console.error('Image URL:', selectedPayment.imageUrl.substring(0, 100) + '...');
+                              e.currentTarget.style.display = 'none';
+                            }}
+                            onLoad={() => {
+                              console.log('Image loaded successfully');
+                            }}
+                          />
+                        </div>
                       ) : (
                         <div className="p-4 text-center text-gray-500 border border-gray-300 rounded-lg">
                           No image available

@@ -28,6 +28,10 @@ export async function POST(request: NextRequest) {
     const network = formData.get('network') as string;
     const walletAddress = formData.get('walletAddress') as string;
     const file = formData.get('image') as File;
+    const screenshot = formData.get('screenshot') as File;
+    
+    // Use the correct file field
+    const imageFile = file || screenshot;
 
     console.log('Payment data received:', {
       fullName,
@@ -35,12 +39,12 @@ export async function POST(request: NextRequest) {
       amount,
       network,
       walletAddress,
-      fileName: file?.name,
-      fileSize: file?.size
+      fileName: imageFile?.name,
+      fileSize: imageFile?.size
     });
-
+    
     // Validation
-    if (!fullName || !email || !amount || !hashPassword || !network || !file || !walletAddress) {
+    if (!fullName || !email || !amount || !hashPassword || !network || !imageFile || !walletAddress) {
       return NextResponse.json(
         { success: false, message: 'All fields are required' },
         { status: 400 }
@@ -70,14 +74,14 @@ export async function POST(request: NextRequest) {
 
     // File validation
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowedTypes.includes(imageFile.type)) {
       return NextResponse.json(
         { success: false, message: 'Only JPG and PNG files are allowed' },
         { status: 400 }
       );
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (imageFile.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { success: false, message: 'File size must be less than 5MB' },
         { status: 400 }
@@ -91,24 +95,24 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename
     const timestamp = Date.now();
-    const fileExtension = file.name.split('.').pop() || 'png';
+    const fileExtension = imageFile.name.split('.').pop() || 'png';
     const filename = `payment_${timestamp}.${fileExtension}`;
     
     // Upload file to Vercel Blob storage
     let fileUrl: string;
     try {
-      const bytes = await file.arrayBuffer();
+      const bytes = await imageFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
       
       console.log('Uploading file to Vercel Blob storage:', {
         filename,
         size: buffer.length,
-        type: file.type
+        type: imageFile.type
       });
       
       const blob = await put(filename, buffer, {
         access: 'public',
-        contentType: file.type,
+        contentType: imageFile.type,
       });
       
       fileUrl = blob.url;
