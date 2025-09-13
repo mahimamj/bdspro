@@ -46,24 +46,32 @@ const AdminPaymentsPage = () => {
   }, []);
 
   const checkAuth = () => {
+    console.log('=== CHECKING AUTH ===');
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    console.log('Is admin:', isAdmin);
     if (!isAdmin) {
+      console.log('Not admin, redirecting...');
       window.location.href = '/admin';
       return;
     }
+    console.log('Admin authenticated, fetching payments...');
     setIsAuthenticated(true);
     fetchPayments();
   };
 
   const fetchPayments = async () => {
     try {
+      console.log('=== FETCHING PAYMENTS ===');
       setLoading(true);
       const response = await fetch('/api/admin/payments');
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success) {
+        console.log('Setting payments:', data.payments);
         setPayments(data.payments);
-        console.log('Fetched payments:', data.payments);
+        console.log('Payments state updated');
         // Debug image URLs
         data.payments.forEach((payment: any) => {
           console.log(`Payment ${payment.id} image URL:`, {
@@ -73,9 +81,11 @@ const AdminPaymentsPage = () => {
           });
         });
       } else {
+        console.error('Failed to fetch payments:', data);
         toast.error('Failed to fetch payments');
       }
     } catch (error) {
+      console.error('Error fetching payments:', error);
       toast.error('Network error');
     } finally {
       setLoading(false);
@@ -323,6 +333,18 @@ const AdminPaymentsPage = () => {
         <div className="fixed top-4 right-4 bg-red-100 border border-red-300 rounded p-2 text-xs z-50">
           <p>Selected Payment: {selectedPayment ? selectedPayment.id : 'None'}</p>
           <p>Modal should show: {selectedPayment ? 'YES' : 'NO'}</p>
+          <p>Payments count: {payments.length}</p>
+          <p>Loading: {loading ? 'YES' : 'NO'}</p>
+          <p>Authenticated: {isAuthenticated ? 'YES' : 'NO'}</p>
+          <button 
+            onClick={() => {
+              console.log('=== TEST BUTTON CLICKED ===');
+              alert('Test button works!');
+            }}
+            className="mt-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+          >
+            Test Click
+          </button>
         </div>
 
         {/* Payment Detail Modal */}
