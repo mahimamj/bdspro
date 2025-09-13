@@ -278,11 +278,18 @@ const AdminPaymentsPage = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => {
-                              console.log('Opening payment details for:', payment.id);
-                              console.log('Image URL:', payment.imageUrl?.substring(0, 100) + '...');
+                              console.log('=== EYE ICON CLICKED ===');
+                              console.log('Payment ID:', payment.id);
+                              console.log('Payment object:', payment);
+                              console.log('Image URL:', payment.imageUrl);
+                              console.log('Image URL length:', payment.imageUrl?.length);
+                              console.log('Setting selected payment...');
                               setSelectedPayment(payment);
+                              console.log('Selected payment set:', payment);
+                              alert(`Opening payment ${payment.id} - Check console for details`);
                             }}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 hover:text-blue-900 p-1 border border-blue-300 rounded"
+                            title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -310,6 +317,12 @@ const AdminPaymentsPage = () => {
               </table>
             </div>
           )}
+        </div>
+
+        {/* Debug Info */}
+        <div className="fixed top-4 right-4 bg-red-100 border border-red-300 rounded p-2 text-xs z-50">
+          <p>Selected Payment: {selectedPayment ? selectedPayment.id : 'None'}</p>
+          <p>Modal should show: {selectedPayment ? 'YES' : 'NO'}</p>
         </div>
 
         {/* Payment Detail Modal */}
