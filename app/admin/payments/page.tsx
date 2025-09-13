@@ -326,6 +326,15 @@ const AdminPaymentsPage = () => {
                     <X className="w-6 h-6" />
                   </button>
                 </div>
+                
+                {/* Debug Info */}
+                <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+                  <p className="text-sm font-medium text-yellow-800">Debug Info:</p>
+                  <p className="text-xs text-yellow-700">Payment ID: {selectedPayment.id}</p>
+                  <p className="text-xs text-yellow-700">Image URL Length: {selectedPayment.imageUrl?.length || 0}</p>
+                  <p className="text-xs text-yellow-700">Image URL Type: {selectedPayment.imageUrl?.startsWith('data:') ? 'Base64' : 'File Path'}</p>
+                  <p className="text-xs text-yellow-700">Image Preview: {selectedPayment.imageUrl?.substring(0, 50)}...</p>
+                </div>
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -378,27 +387,27 @@ const AdminPaymentsPage = () => {
                             src={selectedPayment.imageUrl.startsWith('data:') ? selectedPayment.imageUrl : `data:image/png;base64,${selectedPayment.imageUrl}`}
                             alt="Transaction screenshot"
                             className="max-w-full h-auto rounded-lg border border-gray-300"
+                            style={{ maxHeight: '400px', objectFit: 'contain' }}
                             onError={(e) => {
                               console.error('Image load error for payment:', selectedPayment.id);
                               console.error('Image URL length:', selectedPayment.imageUrl.length);
                               console.error('Image URL starts with data:', selectedPayment.imageUrl.startsWith('data:'));
                               
-                              // Try alternative format
+                              // Show error message
                               const img = e.currentTarget;
-                              if (!selectedPayment.imageUrl.startsWith('data:')) {
-                                img.src = `data:image/jpeg;base64,${selectedPayment.imageUrl}`;
-                              } else {
-                                // Show error message
-                                img.style.display = 'none';
-                                const errorDiv = document.createElement('div');
-                                errorDiv.className = 'p-4 text-center text-red-500 border border-red-300 rounded-lg';
-                                errorDiv.innerHTML = `
-                                  <p>Failed to load image</p>
-                                  <p class="text-xs mt-2">URL length: ${selectedPayment.imageUrl.length}</p>
-                                  <p class="text-xs">Preview: ${selectedPayment.imageUrl.substring(0, 50)}...</p>
-                                `;
-                                img.parentNode?.replaceChild(errorDiv, img);
-                              }
+                              img.style.display = 'none';
+                              const errorDiv = document.createElement('div');
+                              errorDiv.className = 'p-4 text-center text-red-500 border border-red-300 rounded-lg';
+                              errorDiv.innerHTML = `
+                                <p>Failed to load image</p>
+                                <p class="text-xs mt-2">URL length: ${selectedPayment.imageUrl.length}</p>
+                                <p class="text-xs">Preview: ${selectedPayment.imageUrl.substring(0, 50)}...</p>
+                                <button onclick="this.parentElement.previousElementSibling.style.display='block'; this.parentElement.remove();" 
+                                        class="mt-2 px-3 py-1 bg-red-500 text-white rounded text-xs">
+                                  Retry
+                                </button>
+                              `;
+                              img.parentNode?.replaceChild(errorDiv, img);
                             }}
                             onLoad={() => {
                               console.log('Image loaded successfully for payment:', selectedPayment.id);
