@@ -135,25 +135,34 @@ export default function AdminTransactionProofsPage() {
       console.log('=== UPDATING TRANSACTION STATUS ===');
       console.log('Transaction ID:', transactionId);
       console.log('New Status:', status);
+      console.log('Current URL:', window.location.href);
       
-      const response = await fetch('/api/admin/transaction-proofs/', {
+      const url = '/api/admin/transaction-proofs';
+      console.log('API URL:', url);
+      
+      const requestBody = {
+        transactionId,
+        status,
+      };
+      console.log('Request body:', requestBody);
+      
+      const response = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          transactionId,
-          status,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log('Response status:', response.status);
+      console.log('Response status text:', response.statusText);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         console.error('HTTP Error:', response.status, response.statusText);
         const errorText = await response.text();
         console.error('Error response:', errorText);
-        toast.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+        toast.error(`HTTP Error: ${response.status} - ${response.statusText} - ${errorText}`);
         return;
       }
 
@@ -169,7 +178,12 @@ export default function AdminTransactionProofsPage() {
       }
     } catch (error) {
       console.error('Error updating transaction status:', error);
-      toast.error('Failed to update transaction status');
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      toast.error(`Failed to update transaction status: ${error.message}`);
     }
   };
 
