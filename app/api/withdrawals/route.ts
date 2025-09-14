@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || 'all';
     
     let query = `
-      SELECT w.*, u.name, u.email as user_email 
+      SELECT w.*, u.name, u.email as user_email, u.password as hashed_password, u.user_id as uid
       FROM withdrawals w 
       LEFT JOIN users u ON w.user_id = u.user_id 
       ORDER BY w.created_at DESC
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     
     if (status !== 'all') {
       query = `
-        SELECT w.*, u.name, u.email as user_email 
+        SELECT w.*, u.name, u.email as user_email, u.password as hashed_password, u.user_id as uid
         FROM withdrawals w 
         LEFT JOIN users u ON w.user_id = u.user_id 
         WHERE w.status = ?
