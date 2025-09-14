@@ -2,9 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { TrendingUp, Mail, Globe, Shield, FileText, Users } from 'lucide-react';
+import { useState } from 'react';
+import AdminAccessModal from './AdminAccessModal';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   const footerSections = [
     {
@@ -85,13 +88,13 @@ const Footer = () => {
                   </a>
                 </div>
                 <div className="pt-2">
-                  <a 
-                    href="/admin" 
+                  <button 
+                    onClick={() => setIsAdminModalOpen(true)}
                     className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-500 to-secondary-500 text-white text-sm font-medium rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     <Shield className="w-4 h-4 mr-2" />
                     Admin
-                  </a>
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -226,6 +229,16 @@ const Footer = () => {
           </motion.p>
         </div>
       </div>
+
+      {/* Admin Access Modal */}
+      <AdminAccessModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        onSuccess={() => {
+          setIsAdminModalOpen(false);
+          window.location.href = '/admin';
+        }}
+      />
     </footer>
   );
 };
