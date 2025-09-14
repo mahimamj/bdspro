@@ -24,6 +24,7 @@ export default function WithdrawalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState<number | null>(null);
+  const [creatingTest, setCreatingTest] = useState(false);
 
   const fetchWithdrawals = async () => {
     try {
@@ -33,13 +34,16 @@ export default function WithdrawalsPage() {
       const response = await fetch('/api/withdrawals/');
       const data = await response.json();
       
-      if (data.success && data.withdrawals) {
-        setWithdrawals(data.withdrawals);
+      console.log('API Response:', data);
+      
+      if (data.success) {
+        setWithdrawals(data.withdrawals || []);
       } else {
-        setError('Failed to fetch withdrawals');
+        setError(data.message || 'Failed to fetch withdrawals');
       }
     } catch (error) {
-      setError('Network error');
+      console.error('Fetch error:', error);
+      setError('Network error - Please check your connection');
     } finally {
       setLoading(false);
     }
@@ -48,6 +52,29 @@ export default function WithdrawalsPage() {
   useEffect(() => {
     fetchWithdrawals();
   }, []);
+
+  const createTestWithdrawal = async () => {
+    try {
+      setCreatingTest(true);
+      const response = await fetch('/api/create-test-withdrawal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        await fetchWithdrawals();
+        alert('Test withdrawal created successfully!');
+      } else {
+        alert(`Failed to create test withdrawal: ${data.message}`);
+      }
+    } catch (error) {
+      alert('Failed to create test withdrawal');
+    } finally {
+      setCreatingTest(false);
+    }
+  };
 
   const updateStatus = async (id: number, status: string) => {
     const withdrawal = withdrawals.find(w => w.id === id);
@@ -117,6 +144,25 @@ export default function WithdrawalsPage() {
             <p className="text-gray-600 mt-2">Manage user withdrawal requests</p>
           </div>
           <div className="flex space-x-3">
+            <button
+              onClick={createTestWithdrawal}
+              disabled={creatingTest}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {creatingTest ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Create Test Data
+                </>
+              )}
+            </button>
             <a
               href="/test-withdrawal"
               className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center"

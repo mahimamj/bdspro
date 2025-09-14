@@ -73,6 +73,27 @@ export async function GET(request: NextRequest) {
   try {
     console.log('=== FETCHING WITHDRAWALS ===');
     
+    // First check if withdrawals table exists
+    try {
+      await db.execute('SELECT 1 FROM withdrawals LIMIT 1');
+    } catch (tableError) {
+      console.log('Withdrawals table does not exist, creating it...');
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS withdrawals (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          network VARCHAR(100) NOT NULL,
+          transaction_hash VARCHAR(255),
+          transaction_uid VARCHAR(255),
+          amount DECIMAL(10,2) NOT NULL,
+          status ENUM('pending', 'approved', 'rejected', 'completed') DEFAULT 'pending',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+    }
+    
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'all';
     
@@ -112,7 +133,8 @@ export async function GET(request: NextRequest) {
       { 
         success: false, 
         message: 'Failed to fetch withdrawals',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        withdrawals: []
       },
       { status: 500 }
     );
