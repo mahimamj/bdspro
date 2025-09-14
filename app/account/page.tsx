@@ -546,7 +546,7 @@ export default function MyAccountPage() {
     }
 
     try {
-      const response = await fetch('/api/withdrawals', {
+      const response = await fetch('/api/withdrawals/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

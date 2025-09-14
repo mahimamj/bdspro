@@ -43,9 +43,12 @@ export default function WithdrawalsPage() {
         setAutoRefreshing(true);
       }
       
-      const url = `/api/withdrawals?t=${Date.now()}`;
+      const url = `/api/withdrawals/?t=${Date.now()}`;
+      console.log('Fetching withdrawals from:', url);
       const response = await fetch(url);
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Withdrawals data:', data);
       
       if (data.success) {
         const newCount = data.withdrawals.length;
@@ -81,7 +84,7 @@ export default function WithdrawalsPage() {
 
   const updateWithdrawalStatus = async (withdrawalId: number, status: string) => {
     try {
-      const response = await fetch('/api/withdrawals', {
+      const response = await fetch('/api/withdrawals/', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
