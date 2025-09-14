@@ -7,11 +7,11 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== WITHDRAWAL REQUEST API ===');
     
-    const { userId, email, network, transactionHash, amount } = await request.json();
+    const { userId, email, network, transactionHash, transactionUid, amount } = await request.json();
     
-    console.log('Withdrawal request data:', { userId, email, network, transactionHash, amount });
+    console.log('Withdrawal request data:', { userId, email, network, transactionHash, transactionUid, amount });
     
-    if (!userId || !email || !network || !transactionHash || !amount) {
+    if (!userId || !email || !network || !transactionHash || !transactionUid || !amount) {
       return NextResponse.json(
         { success: false, message: 'All fields are required' },
         { status: 400 }
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
 
     // Create withdrawal request
     const [result] = await db.execute(
-      'INSERT INTO withdrawals (user_id, email, network, transaction_hash, amount, status, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-      [userId, email, network, transactionHash, amount, 'pending']
+      'INSERT INTO withdrawals (user_id, email, network, transaction_hash, transaction_uid, amount, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+      [userId, email, network, transactionHash, transactionUid, amount, 'pending']
     ) as any;
 
     console.log('Withdrawal request created with ID:', result.insertId);
@@ -173,7 +173,7 @@ export async function PUT(request: NextRequest) {
           withdrawal.user_id,
           withdrawal.amount,
           'withdrawal',
-          `Withdrawal approved - ${withdrawal.network} - ${withdrawal.transaction_hash}`,
+          `Withdrawal approved - ${withdrawal.network} - UID: ${withdrawal.transaction_uid || withdrawal.transaction_hash}`,
           withdrawal.user_id
         ]
       );

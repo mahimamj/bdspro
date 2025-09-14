@@ -10,6 +10,7 @@ interface Withdrawal {
   name: string;
   network: string;
   transaction_hash: string;
+  transaction_uid: string;
   amount: number;
   status: 'pending' | 'approved' | 'rejected' | 'completed';
   created_at: string;
@@ -109,6 +110,7 @@ export default function WithdrawalsPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Network</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction UID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
@@ -134,6 +136,11 @@ export default function WithdrawalsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 font-mono">
+                          {withdrawal.transaction_uid || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           ${withdrawal.amount.toFixed(2)} USDT
                         </div>
@@ -157,17 +164,30 @@ export default function WithdrawalsPage() {
                             <>
                               <button
                                 onClick={() => updateStatus(withdrawal.id, 'approved')}
-                                className="text-green-600 hover:text-green-900 px-2 py-1 border border-green-300 rounded text-xs"
+                                className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 transition-colors"
                               >
-                                Approve
+                                ✓ Approve
                               </button>
                               <button
                                 onClick={() => updateStatus(withdrawal.id, 'rejected')}
-                                className="text-red-600 hover:text-red-900 px-2 py-1 border border-red-300 rounded text-xs"
+                                className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 transition-colors"
                               >
-                                Reject
+                                ✗ Reject
                               </button>
                             </>
+                          )}
+                          {withdrawal.status === 'approved' && (
+                            <button
+                              onClick={() => updateStatus(withdrawal.id, 'completed')}
+                              className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
+                            >
+                              Complete
+                            </button>
+                          )}
+                          {(withdrawal.status === 'rejected' || withdrawal.status === 'completed') && (
+                            <span className="text-gray-500 text-xs">
+                              {withdrawal.status === 'rejected' ? 'Rejected' : 'Completed'}
+                            </span>
                           )}
                         </div>
                       </td>
