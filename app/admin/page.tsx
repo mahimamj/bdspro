@@ -9,7 +9,8 @@ import {
   Settings,
   ArrowLeft,
   Hash,
-  DollarSign
+  DollarSign,
+  ArrowUpRight
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -93,6 +94,22 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Payment Management</h3>
                 <p className="text-gray-600">Verify cryptocurrency payments</p>
+              </div>
+            </div>
+          </Link>
+
+          {/* Withdrawal Management */}
+          <Link 
+            href="/admin/withdrawals"
+            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-yellow-100 p-3 rounded-lg">
+                <ArrowUpRight className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Withdrawal Management</h3>
+                <p className="text-gray-600">Manage user withdrawal requests</p>
               </div>
             </div>
           </Link>

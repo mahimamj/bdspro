@@ -21,6 +21,9 @@ interface TransactionProof {
   amount: number;
   status: 'pending' | 'verified' | 'rejected';
   created_at: string;
+  hash_password?: string;
+  full_name?: string;
+  email?: string;
   referred_name: string;
   referred_email: string;
   referrer_name: string;
@@ -533,6 +536,18 @@ export default function AdminTransactionProofsPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Date</label>
                     <p className="mt-1 text-sm text-gray-900">{new Date(selectedTransaction.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Hash Password</label>
+                    <p className="mt-1 text-sm text-gray-900 font-mono break-all">{selectedTransaction.hash_password || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedTransaction.full_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedTransaction.email || 'N/A'}</p>
                   </div>
                 </div>
 
