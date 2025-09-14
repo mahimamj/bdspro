@@ -98,17 +98,22 @@ export async function GET(request: NextRequest) {
     
     const [withdrawals] = await db.execute(query, params) as any;
     
-    console.log('Withdrawals found:', withdrawals.length);
+    console.log('Withdrawals found:', withdrawals?.length || 0);
+    console.log('Withdrawals data:', JSON.stringify(withdrawals, null, 2));
     
     return NextResponse.json({
       success: true,
-      withdrawals: withdrawals || []
+      withdrawals: Array.isArray(withdrawals) ? withdrawals : []
     });
 
   } catch (error) {
     console.error('Error fetching withdrawals:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to fetch withdrawals' },
+      { 
+        success: false, 
+        message: 'Failed to fetch withdrawals',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
