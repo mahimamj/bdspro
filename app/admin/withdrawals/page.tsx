@@ -28,18 +28,15 @@ interface Withdrawal {
 }
 
 export default function WithdrawalsPage() {
-  console.log('=== WITHDRAWAL ADMIN COMPONENT RENDERING ===');
-  
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefreshing, setAutoRefreshing] = useState(false);
   const [previousCount, setPreviousCount] = useState(0);
-  
-  console.log('Current state:', { withdrawals: withdrawals.length, loading, filter, searchTerm });
 
   const fetchWithdrawals = async (isAutoRefresh = false) => {
     try {
@@ -48,13 +45,15 @@ export default function WithdrawalsPage() {
       }
       
       const url = `/api/withdrawals/?t=${Date.now()}`;
-      console.log('Fetching withdrawals from:', url);
       const response = await fetch(url);
-      console.log('Response status:', response.status);
-      const data = await response.json();
-      console.log('Withdrawals data:', data);
       
-      if (data.success) {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.withdrawals)) {
         const newCount = data.withdrawals.length;
         if (isAutoRefresh && newCount > previousCount) {
           toast.success(`New withdrawal request detected!`);
@@ -62,11 +61,16 @@ export default function WithdrawalsPage() {
         setPreviousCount(newCount);
         setWithdrawals(data.withdrawals);
         setLastUpdated(new Date());
+        setError(null);
       } else {
         console.error('Failed to fetch withdrawals:', data.message);
+        setWithdrawals([]);
+        setError(data.message || 'Failed to fetch withdrawals');
       }
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
+      setWithdrawals([]);
+      setError('Network error while fetching withdrawals');
     } finally {
       setLoading(false);
       if (isAutoRefresh) {
@@ -76,17 +80,14 @@ export default function WithdrawalsPage() {
   };
 
   useEffect(() => {
-    console.log('=== WITHDRAWAL ADMIN PAGE MOUNTED ===');
     fetchWithdrawals();
     
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
-      console.log('Auto-refreshing withdrawals...');
       fetchWithdrawals(true);
     }, 30000);
     
     return () => {
-      console.log('Clearing withdrawal refresh interval');
       clearInterval(interval);
     };
   }, []);
@@ -252,6 +253,16 @@ export default function WithdrawalsPage() {
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               <p className="mt-2 text-gray-600">Loading withdrawals...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-600 mb-4">{error}</p>
+              <button
+                onClick={() => fetchWithdrawals()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Retry
+              </button>
             </div>
           ) : filteredWithdrawals.length === 0 ? (
             <div className="text-center py-12">
