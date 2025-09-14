@@ -84,6 +84,15 @@ const Footer = () => {
                     www.bdspro.io
                   </a>
                 </div>
+                <div className="pt-2">
+                  <a 
+                    href="/admin" 
+                    className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary-500 to-secondary-500 text-white text-sm font-medium rounded-lg hover:from-primary-600 hover:to-secondary-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                  </a>
+                </div>
               </div>
             </motion.div>
           </div>
