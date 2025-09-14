@@ -225,34 +225,47 @@ export default function WithdrawalsPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User Details</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Network</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction UID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WITHDRAWAL</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">USER DETAILS</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NETWORK</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AMOUNT</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STATUS</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DATE</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {withdrawals.map((withdrawal) => (
                     <tr key={withdrawal.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              #{withdrawal.id}
+                            </div>
+                            <div className="text-sm text-gray-500 font-mono">
+                              WTH_{withdrawal.transaction_uid || withdrawal.transaction_hash?.substring(0, 12) || 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="space-y-1">
                           <div className="text-sm font-medium text-gray-900">
                             {withdrawal.name || 'Unknown User'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            <strong>Email:</strong> {withdrawal.email || withdrawal.user_email}
+                            {withdrawal.email || withdrawal.user_email}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            <strong>UID:</strong> {withdrawal.uid || withdrawal.user_id}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            <strong>Password:</strong> 
-                            <span className="ml-1 font-mono text-xs bg-gray-100 px-1 rounded">
-                              {withdrawal.hashed_password ? withdrawal.hashed_password.substring(0, 20) + '...' : 'N/A'}
-                            </span>
+                          <div className="text-sm text-gray-500 font-mono">
+                            UID: {withdrawal.uid || withdrawal.user_id}
                           </div>
                         </div>
                       </td>
@@ -260,11 +273,6 @@ export default function WithdrawalsPage() {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {withdrawal.network}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 font-mono">
-                          {withdrawal.transaction_uid || 'N/A'}
-                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
@@ -278,6 +286,26 @@ export default function WithdrawalsPage() {
                           withdrawal.status === 'rejected' ? 'bg-red-100 text-red-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
+                          {withdrawal.status === 'approved' && (
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          {withdrawal.status === 'rejected' && (
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          {withdrawal.status === 'pending' && (
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          {withdrawal.status === 'completed' && (
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
                           {withdrawal.status}
                         </span>
                       </td>
@@ -285,9 +313,15 @@ export default function WithdrawalsPage() {
                         {new Date(withdrawal.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-3">
+                          <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
                           {withdrawal.status === 'pending' && (
-                            <>
+                            <div className="flex space-x-2">
                               <button
                                 onClick={() => updateStatus(withdrawal.id, 'approved')}
                                 disabled={processing === withdrawal.id}
@@ -316,7 +350,7 @@ export default function WithdrawalsPage() {
                                   '✗ Reject'
                                 )}
                               </button>
-                            </>
+                            </div>
                           )}
                           {withdrawal.status === 'approved' && (
                             <button
