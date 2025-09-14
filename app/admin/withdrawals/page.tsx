@@ -8,10 +8,8 @@ import {
   XCircle, 
   Eye,
   RefreshCw,
-  Search,
-  Filter
+  Search
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 interface Withdrawal {
   id: number;
@@ -34,18 +32,13 @@ export default function WithdrawalsPage() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [autoRefreshing, setAutoRefreshing] = useState(false);
-  const [previousCount, setPreviousCount] = useState(0);
 
-  const fetchWithdrawals = async (isAutoRefresh = false) => {
+  const fetchWithdrawals = async () => {
     try {
-      if (isAutoRefresh) {
-        setAutoRefreshing(true);
-      }
+      setLoading(true);
+      setError(null);
       
-      const url = `/api/withdrawals/?t=${Date.now()}`;
-      const response = await fetch(url);
+      const response = await fetch('/api/withdrawals/');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -54,42 +47,22 @@ export default function WithdrawalsPage() {
       const data = await response.json();
       
       if (data.success && Array.isArray(data.withdrawals)) {
-        const newCount = data.withdrawals.length;
-        if (isAutoRefresh && newCount > previousCount) {
-          toast.success(`New withdrawal request detected!`);
-        }
-        setPreviousCount(newCount);
         setWithdrawals(data.withdrawals);
-        setLastUpdated(new Date());
-        setError(null);
       } else {
-        console.error('Failed to fetch withdrawals:', data.message);
-        setWithdrawals([]);
         setError(data.message || 'Failed to fetch withdrawals');
+        setWithdrawals([]);
       }
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
-      setWithdrawals([]);
       setError('Network error while fetching withdrawals');
+      setWithdrawals([]);
     } finally {
       setLoading(false);
-      if (isAutoRefresh) {
-        setAutoRefreshing(false);
-      }
     }
   };
 
   useEffect(() => {
     fetchWithdrawals();
-    
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(() => {
-      fetchWithdrawals(true);
-    }, 30000);
-    
-    return () => {
-      clearInterval(interval);
-    };
   }, []);
 
   const updateWithdrawalStatus = async (withdrawalId: number, status: string) => {
@@ -108,14 +81,14 @@ export default function WithdrawalsPage() {
       const data = await response.json();
       
       if (data.success) {
-        toast.success(`Withdrawal ${status} successfully`);
+        alert(`Withdrawal ${status} successfully`);
         fetchWithdrawals();
       } else {
-        toast.error(data.message || 'Failed to update withdrawal status');
+        alert(data.message || 'Failed to update withdrawal status');
       }
     } catch (error) {
       console.error('Error updating withdrawal status:', error);
-      toast.error('Failed to update withdrawal status');
+      alert('Failed to update withdrawal status');
     }
   };
 
@@ -161,18 +134,6 @@ export default function WithdrawalsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Debug Panel */}
-      <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
-        <div className="text-sm text-yellow-800">
-          <strong>Debug Info:</strong> Withdrawals: {withdrawals.length} | 
-          Loading: {loading ? 'YES' : 'NO'} | 
-          Last updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'} | 
-          Auto-refreshing: {autoRefreshing ? 'YES' : 'NO'} | 
-          Filter: {filter} | 
-          Search: "{searchTerm}"
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Withdrawal Management</h1>
@@ -237,10 +198,10 @@ export default function WithdrawalsPage() {
                 Rejected
               </button>
               <button
-                onClick={() => fetchWithdrawals()}
+                onClick={fetchWithdrawals}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
-                <RefreshCw className={`h-4 w-4 ${autoRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className="h-4 w-4" />
                 Refresh
               </button>
             </div>
@@ -258,7 +219,7 @@ export default function WithdrawalsPage() {
             <div className="text-center py-12">
               <p className="text-red-600 mb-4">{error}</p>
               <button
-                onClick={() => fetchWithdrawals()}
+                onClick={fetchWithdrawals}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Retry
