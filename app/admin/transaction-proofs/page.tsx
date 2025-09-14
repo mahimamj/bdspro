@@ -179,11 +179,12 @@ export default function AdminTransactionProofsPage() {
     } catch (error) {
       console.error('Error updating transaction status:', error);
       console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       });
-      toast.error(`Failed to update transaction status: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error(`Failed to update transaction status: ${errorMessage}`);
     }
   };
 
