@@ -577,7 +577,7 @@ export default function MyAccountPage() {
   };
 
   if (loading) {
-    return (
+  return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -682,9 +682,9 @@ export default function MyAccountPage() {
               <div className="flex justify-between">
                 <span className="text-sm">Network Fee:</span>
                 <span className="text-sm font-semibold">~1-5 USDT</span>
-              </div>
             </div>
-            
+          </div>
+
             {/* Withdrawal Section */}
             <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <h3 className="text-lg font-semibold text-yellow-800 mb-4">Withdrawal Request</h3>
@@ -715,9 +715,9 @@ export default function MyAccountPage() {
                     >
                       BEP20 (BSC)
                     </button>
-                  </div>
-                </div>
-                
+            </div>
+          </div>
+
                 <div>
                   <label className="block text-sm font-medium text-yellow-700 mb-2">Transaction Hash *</label>
                   <input
@@ -728,7 +728,7 @@ export default function MyAccountPage() {
                     className="w-full px-3 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     required
                   />
-                </div>
+            </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-yellow-700 mb-2">Withdrawal Amount (USDT) *</label>
@@ -742,22 +742,22 @@ export default function MyAccountPage() {
                     className="w-full px-3 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                     required
                   />
-                </div>
-                
+          </div>
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-800">
                     <strong>Withdrawal Process:</strong> Your withdrawal will be processed within 60 minutes to your account. Please ensure the transaction hash is correct and matches the selected network.
                   </p>
                 </div>
                 
-                <button
+            <button
                   type="button"
                   onClick={handleWithdrawalSubmit}
                   disabled={!withdrawalHash || !withdrawalAmount || parseFloat(withdrawalAmount) < 10}
                   className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
                   Submit Withdrawal Request
-                </button>
+            </button>
               </div>
             </div>
           </div>
@@ -891,7 +891,7 @@ export default function MyAccountPage() {
                           className="px-3 py-1 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors text-sm"
                         >
                           Change File
-                        </button>
+                  </button>
                       </div>
                 </div>
               ) : (
@@ -950,8 +950,8 @@ export default function MyAccountPage() {
               <p className="text-sm text-yellow-200">
                 <strong>Important:</strong> Make sure to send the exact amount and use the correct network. Double-check the wallet address before sending your transaction.
               </p>
+            </div>
           </div>
-        </div>
         </div>
 
       </div>

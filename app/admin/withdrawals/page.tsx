@@ -28,6 +28,8 @@ interface Withdrawal {
 }
 
 export default function WithdrawalsPage() {
+  console.log('=== WITHDRAWAL ADMIN COMPONENT RENDERING ===');
+  
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -36,6 +38,8 @@ export default function WithdrawalsPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefreshing, setAutoRefreshing] = useState(false);
   const [previousCount, setPreviousCount] = useState(0);
+  
+  console.log('Current state:', { withdrawals: withdrawals.length, loading, filter, searchTerm });
 
   const fetchWithdrawals = async (isAutoRefresh = false) => {
     try {
@@ -72,14 +76,19 @@ export default function WithdrawalsPage() {
   };
 
   useEffect(() => {
+    console.log('=== WITHDRAWAL ADMIN PAGE MOUNTED ===');
     fetchWithdrawals();
     
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
+      console.log('Auto-refreshing withdrawals...');
       fetchWithdrawals(true);
     }, 30000);
     
-    return () => clearInterval(interval);
+    return () => {
+      console.log('Clearing withdrawal refresh interval');
+      clearInterval(interval);
+    };
   }, []);
 
   const updateWithdrawalStatus = async (withdrawalId: number, status: string) => {
