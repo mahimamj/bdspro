@@ -43,14 +43,26 @@ export default function DashboardPage() {
   // Fetch transactions function
   const fetchTransactions = async (userId: string) => {
     try {
+      console.log('=== FETCHING TRANSACTIONS ===');
+      console.log('User ID:', userId);
+      console.log('User ID type:', typeof userId);
+      
       setDataLoading(true);
-      const response = await fetch(`/api/transactions?userId=${userId}`);
+      const url = `/api/transactions?userId=${userId}`;
+      console.log('API URL:', url);
+      
+      const response = await fetch(url);
+      console.log('Response status:', response.status);
+      
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success) {
+        console.log('Setting transactions:', data.transactions);
         setTransactions(data.transactions);
         setError(null);
       } else {
+        console.error('API returned error:', data);
         setError(data.message || 'Failed to fetch transactions');
       }
     } catch (error) {

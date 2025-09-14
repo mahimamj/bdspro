@@ -10,19 +10,27 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     
+    console.log('Request URL:', request.url);
+    console.log('Search params:', Object.fromEntries(searchParams.entries()));
+    console.log('User ID from params:', userId);
+    
     if (!userId) {
+      console.log('No user ID provided');
       return NextResponse.json(
         { success: false, message: 'User ID is required' },
         { status: 400 }
       );
     }
 
+    console.log('Fetching transactions for user ID:', userId);
+    
     // Get transactions for the user
     const [transactions] = await db.execute(
       'SELECT * FROM transactions WHERE user_id = ? ORDER BY timestamp DESC',
       [userId]
     ) as any;
 
+    console.log('Raw transactions from DB:', transactions);
     console.log('Transactions found:', transactions.length);
 
     // Transform the data for frontend display
