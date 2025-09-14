@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     console.log('Fetching transactions for user ID:', userId);
     
-    // Get transactions for the user
+    // Get transactions for the user (remove limit to show all transactions)
     const [transactions] = await db.execute(
       'SELECT * FROM transactions WHERE user_id = ? ORDER BY timestamp DESC',
       [userId]

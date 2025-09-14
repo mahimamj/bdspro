@@ -542,10 +542,15 @@ export default function DashboardPage() {
       {/* Transaction History Modal */}
       {showTransactionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] flex flex-col">
+            <div className="p-6 flex-shrink-0">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Account Balance - Transaction History</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Account Balance - Transaction History</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {dataLoading ? 'Loading...' : `${filteredTransactions.length} transaction${filteredTransactions.length !== 1 ? 's' : ''} found`}
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowTransactionModal(false)}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -615,58 +620,60 @@ export default function DashboardPage() {
                   <p className="text-gray-600">No transactions found.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredTransactions.map((transaction) => (
-                        <tr key={transaction.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-800">
-                            {new Date(transaction.date).toLocaleDateString('en-GB', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true
-                            })}
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              transaction.type === 'deposit' 
-                                ? 'bg-green-100 text-green-800' 
-                                : transaction.type === 'withdrawal'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {transaction.name}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-800">{transaction.detail}</td>
-                          <td className="px-4 py-3 text-sm">
-                            {transaction.credit > 0 ? (
-                              <span className="text-green-600 font-semibold">+${transaction.credit.toFixed(2)}</span>
-                            ) : transaction.debit > 0 ? (
-                              <span className="text-red-600 font-semibold">-${transaction.debit.toFixed(2)}</span>
-                            ) : (
-                              <span className="text-gray-500">$0.00</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-800 font-semibold">
-                            ${transaction.balance.toFixed(2)}
-                          </td>
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto border border-gray-200 rounded-lg">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Balance</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredTransactions.map((transaction) => (
+                          <tr key={transaction.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-800">
+                              {new Date(transaction.date).toLocaleDateString('en-GB', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              })}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                transaction.type === 'deposit' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : transaction.type === 'withdrawal'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {transaction.name}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-800">{transaction.detail}</td>
+                            <td className="px-4 py-3 text-sm">
+                              {transaction.credit > 0 ? (
+                                <span className="text-green-600 font-semibold">+${transaction.credit.toFixed(2)}</span>
+                              ) : transaction.debit > 0 ? (
+                                <span className="text-red-600 font-semibold">-${transaction.debit.toFixed(2)}</span>
+                              ) : (
+                                <span className="text-gray-500">$0.00</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-800 font-semibold">
+                              ${transaction.balance.toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
